@@ -294,14 +294,72 @@ END:VCARD
           forwardingScore: 1,
           isForwarded: true,
           forwardedNewsletterMessageInfo: {
-            newsletterJid: '120363236795889672@newsletter',
-            newsletterName: 'اضغط هنا 『🇵🇸⤥Anime⊰❄️⊱World⤦🇯🇵』', 
+            newsletterJid: '120363308501750930@newsletter',
+            newsletterName: '『𝐒𝐔𝐏𝐏𝐎𝐑𝐓-𝐍𝐀𝐍𝐎-𝐁𝐎𝐓』', 
             serverMessageId: '' }, 
                 ...options
                 }
                 })
             }
         },   
+sendoldButton: {
+   async value(jid, text = '', footer = wm, buffer, buttons, quoted, options = {}) {
+    let img, video;
+
+    if (/^https?:\/\//i.test(buffer)) {
+        try {
+            const response = await fetch(buffer);
+            const contentType = response.headers.get('content-type');
+            if (/^image\//i.test(contentType)) {
+                img = { url: buffer };
+            } else if (/^video\//i.test(contentType)) {
+                video = { url: buffer };
+            } else {
+                console.error("Unsupported MIME type : ", contentType);
+            }
+        } catch (error) {
+            console.error("Error getting MIME type : ", error);
+        }
+    } else {
+        try {
+            const type = await conn.getFile(buffer);
+            if (/^image\//i.test(type.mime)) {
+                img = buffer;
+            } else if (/^video\//i.test(type.mime)) {
+                video = buffer;
+            }
+        } catch (error) {
+            console.error("Error getting file type : ", error);
+        }
+    }
+
+    const dynamicButtons = buttons.map(btn => ({
+        buttonId: btn[1],
+        buttonText: { displayText: btn[0] },
+        type: 1,
+    }));
+
+    let message = {
+        footer: footer,
+        buttons: dynamicButtons,
+        headerType: 1,
+        viewOnce: true
+    };
+
+    if (img) {
+        message.image = img;
+        message.caption = text;
+    } else if (video) {
+        message.video = video;
+        message.caption = text;
+    } else {
+        message.text = text;
+    }
+
+    return await conn.sendMessage(jid, message, { quoted });
+  },
+   enumerable: true,
+    },
         
 	/**
      * Send Contact Array
