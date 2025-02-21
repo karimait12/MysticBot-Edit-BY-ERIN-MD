@@ -30,6 +30,8 @@
   },
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "aki-api":"7.0.1",
+    "javascript-obfuscator": "^4.1.1",
     "@adiwajshing/keyed-db": "^0.2.4",
     "@bochilteam/scraper": "^4.2.4",
     "@brandond/findthelyrics": "^2.0.5",
@@ -94,6 +96,9 @@
     "url-regex-safe": "^3.0.0",
     "yargs": "^17.3.1",
     "yt-search": "^2.10.3",
+    "chess.js": "^0.13.4",
+    "canvacord": "^5.4.4",
+    "canvafy": "^7.1.0",
     "ytdl-core": "github:khlevon/node-ytdl-core#v4.11.4-patch.2"
   },
   "optionalDependencies": {
