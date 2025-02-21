@@ -120,18 +120,18 @@ opcion = '1'
 }
 if (!methodCodeQR && !methodCode && !fs.existsSync(`./${authFile}/creds.json`)) {
 do {
-opcion = await question('[ ℹ️ ] Seleccione una opción:\n1. Con código QR\n2. Con código de texto de 8 dígitos\n---> ')
-if (!/^[1-2]$/.test(opcion)) {
-console.log('[ ❗ ] Por favor, seleccione solo 1 o 2.\n')
-}} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${authFile}/creds.json`))
-}
+  opcion = await question('[ ℹ️ ] اختر خيارًا:\n1. باستخدام رمز QR\n2. باستخدام رمز نصي مكون من 8 أرقام\n---> ')
+  if (!/^[1-2]$/.test(opcion)) {
+  console.log('[ ❗ ] الرجاء اختيار 1 أو 2 فقط.\n')
+  }} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${authFile}/creds.json`))
+  }
 
 console.info = () => {} // https://github.com/skidy89/baileys actualmente no muestra logs molestos en la consola
 const connectionOptions = {
     logger: Pino({ level: 'silent' }),
     printQRInTerminal: opcion === '1' || methodCodeQR,
     mobile: MethodMobile,
-    browser: opcion === '1' ? ['TheMystic-Bot-MD', 'Safari', '2.0.0'] : methodCodeQR ? ['TheMystic-Bot-MD', 'Safari', '2.0.0'] : ['Ubuntu', 'Chrome', '20.0.04'],
+    browser: opcion === '1' ? ['Nano-Bot-V2', 'Safari', '2.0.0'] : methodCodeQR ? ['Nano-Bot-V2', 'Safari', '2.0.0'] : ['Ubuntu', 'Chrome', '20.0.04'],
     auth: {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: 'fatal' }).child({ level: 'fatal' })),
@@ -165,23 +165,27 @@ if (!fs.existsSync(`./${authFile}/creds.json`)) {
 if (opcion === '2' || methodCode) {
 opcion = '2'
 if (!conn.authState.creds.registered) {  
-if (MethodMobile) throw new Error('No se puede usar un código de emparejamiento con la API móvil')
+if (MethodMobile) throw new Error('لا يمكن استخدام رمز الاقتران مع واجهة برمجة التطبيقات المحمولة.')
 
 let numeroTelefono
 if (!!phoneNumber) {
 numeroTelefono = phoneNumber.replace(/[^0-9]/g, '')
 if (!Object.keys(PHONENUMBER_MCC).some(v => numeroTelefono.startsWith(v))) {
-console.log(chalk.bgBlack(chalk.bold.redBright("Comience con el código de país de su número de WhatsApp.\nEjemplo: +5219992095479\n")))
+
+console.log(chalk.bgBlack(chalk.bold.redBright("ابدأ برمز الدولة لرقم WhatsApp الخاص بك.\nمثال: +201151094460\n")));
+
 process.exit(0)
 }} else {
 while (true) {
-numeroTelefono = await question(chalk.bgBlack(chalk.bold.yellowBright('Por favor, escriba su número de WhatsApp.\nEjemplo: +5219992095479\n')))
+numeroTelefono = await question(chalk.bgBlack(chalk.bold.yellowBright('يرجى كتابة رقم WhatsApp الخاص بك.\nمثال: +201151094460\n')));
+
 numeroTelefono = numeroTelefono.replace(/[^0-9]/g, '')
 
 if (numeroTelefono.match(/^\d+$/) && Object.keys(PHONENUMBER_MCC).some(v => numeroTelefono.startsWith(v))) {
 break 
 } else {
-console.log(chalk.bgBlack(chalk.bold.redBright("Por favor, escriba su número de WhatsApp.\nEjemplo: +5219992095479.\n")))
+console.log(chalk.bgBlack(chalk.bold.redBright("يرجى كتابة رقم WhatsApp الخاص بك.\nمثال: +201151094460.\n")));
+
 }}
 rl.close()  
 } 
@@ -189,15 +193,16 @@ rl.close()
         setTimeout(async () => {
             let codigo = await conn.requestPairingCode(numeroTelefono)
             codigo = codigo?.match(/.{1,4}/g)?.join("-") || codigo
-            console.log(chalk.yellow('[ ℹ️ ] introduce el código de emparejamiento en WhatsApp.'));
-            console.log(chalk.black(chalk.bgGreen(`Su código de emparejamiento: `)), chalk.black(chalk.white(codigo)))
+            console.log(chalk.yellow('[ ℹ️ ] أدخل رمز الاقتران في WhatsApp.'))
+console.log(chalk.black(chalk.bgGreen(`رمز الاقتران الخاص بك: `)), chalk.black(chalk.white(codigo)))
+
         }, 3000)
 }}
 }
 
 conn.isInit = false;
 conn.well = false;
-conn.logger.info(`[ ℹ️ ] Cargando...\n`);
+conn.logger.info(`[ ℹ️ ] جارٍ التحميل...\n`);
 
 if (!opts['test']) {
   if (global.db) {
@@ -220,12 +225,12 @@ if (opts['server']) (await import('./server.js')).default(global.conn, PORT);
         que me arrepiento de ser un grasoso
         Por que la grasa es un sentimiento
         - El waza 👻👻👻👻 (Aiden)            
-        
+
    Yo tambien se hacer momazos Aiden...
         ahi te va el ajuste de los borrados
         inteligentes de las sesiones y de los sub-bot
         By (Rey Endymion 👺👍🏼) 
-        
+
    Ninguno es mejor que tilin god
         - atte: sk1d             */
 
@@ -248,9 +253,9 @@ function deleteCoreFiles(filePath) {
   if (coreFilePattern.test(filename)) {
     fs.unlink(filePath, (err) => {
       if (err) {
-        console.error(`Error eliminando el archivo ${filePath}:`, err);
+        console.error(`خطأ في حذف الملف ${filePath}:`, err);
       } else {
-        console.log(`Archivo eliminado: ${filePath}`);
+        console.log(`تم حذف الملف: ${filePath}`);
       }
     });
   }
@@ -274,7 +279,7 @@ return file.startsWith('pre-key-') /*|| file.startsWith('session-') || file.star
 })
 prekey = [...prekey, ...filesFolderPreKeys]
 filesFolderPreKeys.forEach(files => {
-unlinkSync(`./MysticSession/${files}`)
+unlinkSync(`./NanoSession/${files}`)
 })
 } 
 
@@ -295,7 +300,7 @@ unlinkSync(`./jadibts/${directorio}/${fileInDir}`)
 })
 if (SBprekey.length === 0) return; //console.log(chalk.cyanBright(`=> No hay archivos por eliminar.`))
 } catch (err) {
-console.log(chalk.bold.red(`[ ℹ️ ] Algo salio mal durante la eliminación, archivos no eliminados`))
+console.log(chalk.bold.red(`[ ℹ️ ] حدث خطأ أثناء الحذف، الملفات لم تُحذف`))
 }}
 
 function purgeOldFiles() {
@@ -311,15 +316,15 @@ if (err) throw err;
 if (stats.isFile() && stats.mtimeMs < oneHourAgo && file !== 'creds.json') { 
 unlinkSync(filePath, err => {  
 if (err) throw err
-console.log(chalk.bold.green(`Archivo ${file} borrado con éxito`))
+console.log(chalk.bold.green(`تم حذف الملف ${file} بنجاح`))
 })
 } else {  
-console.log(chalk.bold.red(`Archivo ${file} no borrado` + err))
+console.log(chalk.bold.red(`لم يتم حذف الملف ${file}` + err))
 } }) }) }) })
 }
 
 async function connectionUpdate(update) {
-  
+
 
   const {connection, lastDisconnect, isNewLogin} = update;
   stopped = connection;
@@ -331,43 +336,44 @@ async function connectionUpdate(update) {
   }
   if (global.db.data == null) loadDatabase();
 if (update.qr != 0 && update.qr != undefined || methodCodeQR) {
-if (opcion == '1' || methodCodeQR) {
-    console.log(chalk.yellow('[ ℹ️ ] Escanea el código QR.'));
- }}
+  if (opcion == '1' || methodCodeQR) {
+    console.log(chalk.yellow('[ ℹ️ ] قم بمسح رمز الاستجابة السريعة (QR).'));
+  }}
   if (connection == 'open') {
-    console.log(chalk.yellow('[ ℹ️ ] Conectado correctamente.'));
+    console.log(chalk.yellow('[ ℹ️ ] تم الاتصال بنجاح.'));
   }
-let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
-if (reason == 405) {
-await fs.unlinkSync("./MysticSession/" + "creds.json")
-console.log(chalk.bold.redBright(`[ ⚠ ] Conexión replazada, Por favor espere un momento me voy a reiniciar...\nSi aparecen error vuelve a iniciar con : npm start`)) 
-process.send('reset')}
-if (connection === 'close') {
-    if (reason === DisconnectReason.badSession) {
-        conn.logger.error(`[ ⚠ ] Sesión incorrecta, por favor elimina la carpeta ${global.authFile} y escanea nuevamente.`);
-        //process.exit();
-    } else if (reason === DisconnectReason.connectionClosed) {
-        conn.logger.warn(`[ ⚠ ] Conexión cerrada, reconectando...`);
-        await global.reloadHandler(true).catch(console.error);
-    } else if (reason === DisconnectReason.connectionLost) {
-        conn.logger.warn(`[ ⚠ ] Conexión perdida con el servidor, reconectando...`);
-        await global.reloadHandler(true).catch(console.error);
-    } else if (reason === DisconnectReason.connectionReplaced) {
-        conn.logger.error(`[ ⚠ ] Conexión reemplazada, se ha abierto otra nueva sesión. Por favor, cierra la sesión actual primero.`);
-        //process.exit();
-    } else if (reason === DisconnectReason.loggedOut) {
-        conn.logger.error(`[ ⚠ ] Conexion cerrada, por favor elimina la carpeta ${global.authFile} y escanea nuevamente.`);
-        //process.exit();
-    } else if (reason === DisconnectReason.restartRequired) {
-        conn.logger.info(`[ ⚠ ] Reinicio necesario, reinicie el servidor si presenta algún problema.`);
-        await global.reloadHandler(true).catch(console.error);
-    } else if (reason === DisconnectReason.timedOut) {
-        conn.logger.warn(`[ ⚠ ] Tiempo de conexión agotado, reconectando...`);
-        await global.reloadHandler(true).catch(console.error);
-    } else {
-        conn.logger.warn(`[ ⚠ ] Razón de desconexión desconocida. ${reason || ''}: ${connection || ''}`);
-        await global.reloadHandler(true).catch(console.error);
-    }
+  let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
+  if (reason == 405) {
+  await fs.unlinkSync("./MysticSession/" + "creds.json")
+  console.log(chalk.bold.redBright(`[ ⚠ ] تم استبدال الاتصال، يرجى الانتظار لحظة سأقوم بإعادة التشغيل...\nإذا ظهرت أخطاء، يرجى البدء مرة أخرى باستخدام: npm start`))
+  process.send('reset')}
+  if (connection === 'close') {
+      if (reason === DisconnectReason.badSession) {
+          conn.logger.error(`[ ⚠ ] جلسة غير صحيحة، يرجى حذف المجلد ${global.authFile} وإعادة المسح مرة أخرى.`);
+          //process.exit();
+      } else if (reason === DisconnectReason.connectionClosed) {
+      conn.logger.warn(`[ ⚠ ] الاتصال مغلق، جاري إعادة الاتصال...`);
+      await global.reloadHandler(true).catch(console.error);
+  } else if (reason === DisconnectReason.connectionLost) {
+      conn.logger.warn(`[ ⚠ ] فقدان الاتصال بالخادم، جاري إعادة الاتصال...`);
+      await global.reloadHandler(true).catch(console.error);
+  } else if (reason === DisconnectReason.connectionReplaced) {
+      conn.logger.error(`[ ⚠ ] الاتصال تم استبداله، تم فتح جلسة جديدة. يرجى إغلاق الجلسة الحالية أولاً.`);
+      //process.exit();
+  } else if (reason === DisconnectReason.loggedOut) {
+      conn.logger.error(`[ ⚠ ] الاتصال مغلق، يرجى حذف المجلد ${global.authFile} وإعادة المسح مرة أخرى.`);
+      //process.exit();
+  } else if (reason === DisconnectReason.restartRequired) {
+      conn.logger.info(`[ ⚠ ] إعادة التشغيل مطلوبة، يرجى إعادة تشغيل الخادم إذا واجهت أي مشاكل.`);
+      await global.reloadHandler(true).catch(console.error);
+  } else if (reason === DisconnectReason.timedOut) {
+      conn.logger.warn(`[ ⚠ ] انقضى وقت الاتصال، جاري إعادة الاتصال...`);
+      await global.reloadHandler(true).catch(console.error);
+} else {
+      conn.logger.warn(`[ ⚠ ] سبب الانفصال غير معروف. ${reason || ''}: ${connection || ''}`);
+      await global.reloadHandler(true).catch(console.error);
+}
+    
 }
 }
 
@@ -377,9 +383,9 @@ let isInit = true;
 
 let handler = await import('./handler.js');
 global.reloadHandler = async function(restatConn) {
-  
+
   try {
-   
+
     const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error);
     if (Object.keys(Handler || {}).length) handler = Handler;
   } catch (e) {
@@ -407,14 +413,14 @@ global.reloadHandler = async function(restatConn) {
 
   // Para cambiar estos mensajes, solo los archivos en la carpeta de language, 
   // busque la clave "handler" dentro del json y cámbiela si es necesario
-  conn.welcome = '👋 ¡Bienvenido/a!\n@user';
-  conn.bye = '👋 ¡Hasta luego!\n@user';
-  conn.spromote = '*[ ℹ️ ] @user Fue promovido a administrador.*';
-  conn.sdemote = '*[ ℹ️ ] @user Fue degradado de administrador.*';
-  conn.sDesc = '*[ ℹ️ ] La descripción del grupo ha sido modificada.*';
-  conn.sSubject = '*[ ℹ️ ] El nombre del grupo ha sido modificado.*';
-  conn.sIcon = '*[ ℹ️ ] Se ha cambiado la foto de perfil del grupo.*';
-  conn.sRevoke = '*[ ℹ️ ] El enlace de invitación al grupo ha sido restablecido.*';
+   conn.welcome = '👋 مرحباً بك!\n@user';
+  conn.bye = '👋 إلى اللقاء!\n@user';
+  conn.spromote = '*[ ℹ️ ] @user تمت ترقيته إلى مشرف.*';
+  conn.sdemote = '*[ ℹ️ ] @user تم تخفيضه من مشرف.*';
+  conn.sDesc = '*[ ℹ️ ] تم تعديل وصف المجموعة.*';
+  conn.sSubject = '*[ ℹ️ ] تم تعديل اسم المجموعة.*';
+  conn.sIcon = '*[ ℹ️ ] تم تغيير صورة الملف الشخصي للمجموعة.*';
+  conn.sRevoke = '*[ ℹ️ ] تم إعادة تعيين رابط دعوة المجموعة.*';
 
   conn.handler = handler.handler.bind(global.conn);
   conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
@@ -531,7 +537,7 @@ setInterval(async () => {
   if (stopped === 'close' || !conn || !conn?.user) return;
   const _uptime = process.uptime() * 1000;
   const uptime = clockString(_uptime);
-  const bio = `• Activo: ${uptime} | TheMystic-Bot-MD`;
+  const bio = `مرحبا انا بوت ❲ ${global.wm} ❳\nاعمل بتقنيات الذكاء الاصطناعي\nاعمل منذ ❲ ${uptime} ❳\nلاستخدامي اكتب ❲ .اوامر ❳ 🧞`;
   await conn?.updateProfileStatus(bio).catch((_) => _);
 }, 60000);
 function clockString(ms) {
