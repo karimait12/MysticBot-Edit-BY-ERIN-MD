@@ -35,6 +35,9 @@ export async function handler(chatUpdate) {
   if (!m) {
     return;
   }
+if (m.fromMe) {
+     return;
+ }
   if (global.db.data == null) await global.loadDatabase();
   /* Creditos a Otosaka (https://wa.me/51993966345) */
 
@@ -46,9 +49,6 @@ export async function handler(chatUpdate) {
     if (!m) {
       return;
     }
-if (m.fromMe) {
-     return;
- }
     global.mconn = m
     mconn = m
     m.exp = 0;
