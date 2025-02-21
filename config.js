@@ -41,9 +41,9 @@ global.imagen5 = fs.createReadStream('./src/assets/images/menu/languages/ru/menu
 
 global.imagen1 = fs.readFileSync('./menu.png');
 global.imagen2 = fs.readFileSync('./menu.png');
-global.imagen3 = fs.readFileSync('./menu.png')
-global.imagen4 = fs.readFileSync('./menu.png')
-global.imagen5 = fs.readFileSync('./menu.png')
+global.imagen3 = fs.readFileSync('./menu.png');
+global.imagen4 = fs.readFileSync('./menu.png');
+global.imagen5 = fs.readFileSync('./menu.png');
 
 global.mods = [];
 
@@ -82,7 +82,7 @@ global.comienzo = '• • ◕◕════';
 global.fin = '════◕◕ • •';
 global.botdate = `*[ 📅 ] Fecha:*  ${moment.tz('America/Mexico_City').format('DD/MM/YY')}`;
 global.bottime = `*[ ⏳ ] Hora:* ${moment.tz('America/Mexico_City').format('HH:mm:ss')}`;
-global.fgif = {key: {participant: '0@s.whatsapp.net'}, message: {'videoMessage': {'title': wm, 'h': `Hmm`, 'seconds': '999999999', 'gifPlayback': 'true', 'caption': bottime, 'jpegThumbnail': fs.readFileSync('./src/assets/images/menu/languages/es/menu.png')}}};
+global.fgif = {key: {participant: '0@s.whatsapp.net'}, message: {'videoMessage': {'title': wm, 'h': `Hmm`, 'seconds': '999999999', 'gifPlayback': 'true', 'caption': bottime, 'jpegThumbnail': fs.readFileSync('./menu.png')}}};
 global.multiplier = 99;
 global.flaaa = [
   'https://flamingtext.com/net-fu/proxy_form.cgi?&imageoutput=true&script=water-logo&script=water-logo&fontsize=90&doScale=true&scaleWidth=800&scaleHeight=500&fontsize=100&fillTextColor=%23000&shadowGlowColor=%23000&backgroundColor=%23000&text=',
