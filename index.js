@@ -61,7 +61,7 @@ async function start(file) {
     gradient: ['red', 'magenta'],
   });
 
-  say(`Bot creado por Bruno Sobrino`, {
+  say(`Edit BY ERIN-MD`, {
     font: 'console',
     align: 'center',
     gradient: ['red', 'magenta'],
@@ -76,14 +76,14 @@ async function start(file) {
     return;
   }
 
-  const opcion = await question(chalk.yellowBright.bold('—◉ㅤSeleccione una opción (solo el numero):\n') + chalk.white.bold('1. Con código QR\n2. Con código de texto de 8 dígitos\n—> '));
+  const opcion = await question(chalk.yellowBright.bold('[ 💡 ]ㅤاختر خيارًا (فقط الرقم):\n') + chalk.white.bold('1. باستخدام كود QR\n2. باستخدام كود نصي من 8 أرقام\n—> '));
 
   let numeroTelefono = '';
   if (opcion === '2') {
-    const phoneNumber = await question(chalk.yellowBright.bold('\n—◉ㅤEscriba su número de WhatsApp:\n') + chalk.white.bold('◉ㅤEjemplo: +5219992095479\n—> '));
+    const phoneNumber = await question(chalk.yellowBright.bold('\n[ 💡 ]ㅤأدخل رقم WhatsApp الخاص بك:\n') + chalk.white.bold('مثال: +201145624848\n—> '));
     numeroTelefono = formatearNumeroTelefono(phoneNumber);
     if (!esNumeroValido(numeroTelefono)) {
-      console.log(chalk.bgRed(chalk.white.bold('[ ERROR ] Número inválido. Asegúrese de haber escrito su numero en formato internacional y haber comenzado con el código de país.\n—◉ㅤEjemplo:\n◉ +5219992095479\n')));
+      console.log(chalk.bgRed(chalk.white.bold('[ ❓ ] رقم غير صالح. تأكد من أنك كتبت رقمك بصيغة دولية وبدأت برمز الدولة.\nمثال:\n+201145624848\n')));
       process.exit(0);
     }
     process.argv.push(numeroTelefono);
@@ -101,7 +101,7 @@ async function start(file) {
   const p = fork();
 
   p.on('message', (data) => {
-    console.log(chalk.green.bold('—◉ㅤRECIBIDO:'), data);
+    console.log(chalk.green.bold('[ 📑 ]ㅤتم الاستلام:'), data);
     switch (data) {
       case 'reset':
         p.process.kill();
@@ -116,7 +116,7 @@ async function start(file) {
 
   p.on('exit', (_, code) => {
     isRunning = false;
-    console.error(chalk.red.bold('[ ERROR ] Ocurrió un error inesperado:'), code);
+    console.error(chalk.red.bold('[ ⚠️ ] حدث خطأ غير متوقع:'), code);
     p.process.kill();
     isRunning = false;
     start.apply(this, arguments);
