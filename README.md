@@ -11,8 +11,7 @@
 [![WhatsApp](https://img.shields.io/badge/قناة-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://whatsapp.com/channel/0029VaiUhw5BFLgV89U3rT18)
 
 ## `creds.json لاخذ ملف`
-[![Cheems Bot](https://pair.nexusteam.tech/)
-
+(https://pair.nexusteam.tech/)
 ## التعليمات
 
 > **الأهمية**  
