@@ -16,46 +16,11 @@ global.isBaileysFail = false
 global.defaultLenguaje = 'es';
 
 global.owner = [
-  ['5219992095479', '👑 Mystic - Creador 👑', true],
-  ['51940617554', '💫 Mystic - Collaborator 2 💫', true],
-  ['51996089079', '💫 Mystic - Collaborator 3 💫', true],
-  ['5218442286089', '💫 Mystic - Collaborator 4 💫', true],
-  ['50246028932', '💫 Mystic - Collaborator 5 💫', true],
-  ['5212412377467', '💫 Mystic - Collaborator 6 💫', true],
-  ['5215517489568', '💫 Mystic - Rey Endymion 💫', false],
-  ['59895555511', '💫 Mystic - Collaborator 8 💫', true],
-  ['573012482597', '💫 Mystic - OfcKing', true],
-  ['59175655964', '💫 Mystic - By Alba070503 💫', true],
-  ['5493794297363', '💫 Mystic - GabrielVz', true], 
-  ['393518398856', '💫 Mystic - Tester Fabri115💫', true],
-  ['212781160203', '💫 Mystic - Saad 💫', true], 
-  ['5217778573223', '💫 Mystic - Sarethh 💫', true],
-  ['593968585283'],
-  ['5492266466080'],
-  ['5218442114446'],
-  ['59894808483'],
-  ['593980586516'], 
-  ['595975740803'],  
-  ['5492266613038'],
-  ['50497150165'],
-  ['51906662557'],
-  ['573183650526'], 
-  ['5217441298510'], 
-  ['5217294888993'],
-  ['595992611272'],
-  ['5219992843892'],
-  ['5493795319022'],
-  ['573147616444'], 
-  ['5219991402134'],
-  ['5219996125657'],
-  ['5492215034412'],
-  ['584125778026'],
-  ['5218444937407'],
-  ['5218713339906']
+  ['201151094460', '👑 ERIN-MD 👑', true],
 ];
 
-global.suittag = ['5219993404349'];
-global.prems = ['51995386439'];
+global.suittag = ['201151094460'];
+global.prems = ['201151094460'];
 
 // API
 global.BASE_API_DELIRIUS = "https://delirius-apiofc.vercel.app";
@@ -66,7 +31,7 @@ global.wm = 'The Mystic - Bot';
 global.titulowm = 'The Mystic - Bot';
 global.titulowm2 = `The Mystic - Bot`
 global.igfg = 'The Mystic - Bot';
-global.wait = '*_[ ⏳ ] Cargando..._*';
+global.wait = '*⌛ _جاري التحميل▰▰▰▱▱▱▱▱_*';
 
 /*global.imagen1 = fs.createReadStream('./src/assets/images/menu/languages/es/menu.png');
 global.imagen2 = fs.createReadStream('./src/assets/images/menu/languages/pt/menu.png');
@@ -74,11 +39,11 @@ global.imagen3 = fs.createReadStream('./src/assets/images/menu/languages/fr/menu
 global.imagen4 = fs.createReadStream('./src/assets/images/menu/languages/en/menu.png');
 global.imagen5 = fs.createReadStream('./src/assets/images/menu/languages/ru/menu.png');*/
 
-global.imagen1 = fs.readFileSync('./src/assets/images/menu/languages/es/menu.png');
-global.imagen2 = fs.readFileSync('./src/assets/images/menu/languages/pt/menu.png');
-global.imagen3 = fs.readFileSync('./src/assets/images/menu/languages/fr/menu.png')
-global.imagen4 = fs.readFileSync('./src/assets/images/menu/languages/en/menu.png')
-global.imagen5 = fs.readFileSync('./src/assets/images/menu/languages/ru/menu.png')
+global.imagen1 = fs.readFileSync('./menu.png');
+global.imagen2 = fs.readFileSync('./menu.png');
+global.imagen3 = fs.readFileSync('./menu.png')
+global.imagen4 = fs.readFileSync('./menu.png')
+global.imagen5 = fs.readFileSync('./menu.png')
 
 global.mods = [];
 
@@ -97,10 +62,10 @@ global.mysticbot = 'The Mystic - Bot';
 global.channel = 'https://whatsapp.com/channel/0029Vaein6eInlqIsCXpDs3y';
 global.md = 'https://github.com/BrunoSobrino/TheMystic-Bot-MD';
 global.mysticbot = 'https://github.com/BrunoSobrino/TheMystic-Bot-MD';
-global.waitt = '*_[ ⏳ ] Cargando..._*';
-global.waittt = '*_[ ⏳ ] Cargando..._*';
-global.waitttt = '*_[ ⏳ ] Cargando..._*';
-global.nomorown = '5219993404349';
+global.waitt = '*⌛ _جاري التحميل▰▰▰▱▱▱▱▱_*';
+global.waittt = '*⌛ _جاري التحميل▰▰▰▱▱▱▱▱_*';
+global.waitttt = '*⌛ _جاري التحميل▰▰▰▱▱▱▱▱_*';
+global.nomorown = '201151094460';
 global.pdoc = ['application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/msword', 'application/pdf', 'text/rtf'];
 global.cmenut = '❖––––––『';
 global.cmenub = '┊✦ ';
