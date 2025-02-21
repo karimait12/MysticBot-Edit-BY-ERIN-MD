@@ -46,6 +46,9 @@ export async function handler(chatUpdate) {
     if (!m) {
       return;
     }
+if (m.fromMe) {
+     return;
+ }
     global.mconn = m
     mconn = m
     m.exp = 0;
@@ -1094,7 +1097,7 @@ export async function participantsUpdate({ id, participants, action }) {
             const userPrefix = antiArab.some((prefix) => user.startsWith(prefix));
             const botTt2 = groupMetadata?.participants?.find((u) => m?.conn?.decodeJid(u.id) == m?.conn?.user?.jid) || {};
             const isBotAdminNn = botTt2?.admin === 'admin' || false;
-            text = (action === 'add' ? (chat.sWelcome || tradutor.texto1 || conn.welcome || 'نورت الجروب ياحب @user!').replace('@subject', await m?.conn?.getName(id)).replace('@desc', groupMetadata?.desc?.toString() || '*𝚂𝙸𝙽 𝙳𝙴𝚂𝙲𝚁𝙸𝙿𝙲𝙸𝙾𝙽*').replace('@user', '@' + user.split('@')[0]) :
+            text = (action === 'add' ? (chat.sWelcome || tradutor.texto1 || conn.welcome || 'نورت ياحب, @user!').replace('@subject', await m?.conn?.getName(id)).replace('@desc', groupMetadata?.desc?.toString() || '*𝚂𝙸𝙽 𝙳𝙴𝚂𝙲𝚁𝙸𝙿𝙲𝙸𝙾𝙽*').replace('@user', '@' + user.split('@')[0]) :
               (chat.sBye || tradutor.texto2 || conn.bye || 'مع السلامه مش هتوحشنا, @user!')).replace('@user', '@' + user.split('@')[0]);
             if (userPrefix && chat.antiArab && botTt.restrict && isBotAdminNn && action === 'add') {
               const responseb = await m.conn.groupParticipantsUpdate(id, [user], 'remove');
@@ -1138,7 +1141,7 @@ export async function groupsUpdate(groupsUpdate) {
   if (opts['self']) {
     return;
   }
-for (const groupUpdate of groupsUpdate) {
+  for (const groupUpdate of groupsUpdate) {
     const id = groupUpdate.id;
     if (!id) continue;
     if (groupUpdate.size == NaN) continue;
@@ -1164,8 +1167,8 @@ export async function callUpdate(callUpdate) {
         const callmsg = await mconn?.conn?.reply(nk.from, `مرحبًا *@${nk.from.split('@')[0]}*، المكالمات ${nk.isVideo ? 'الفيديو' : 'الصوتية'} غير مسموح بها، سيتم حظرك.\n-\nإذا كنت قد اتصلت عن طريق الخطأ، يرجى الاتصال بمنشئي لإلغاء الحظر!`, false, { mentions: [nk.from] });
         // let data = global.owner.filter(([id, isCreator]) => id && isCreator)
         // await this.sendContact(nk.from, data.map(([id, name]) => [id, name]), false, { quoted: callmsg })
-        const vcard = `BEGIN:VCARD\nVERSION:3.0\nN:;⛊ 𝑶𝒘𝒏𝒆𝒓 - 𝑻𝒉𝒆 𝑬𝒏𝒅;;;\nFN:⛊ 𝑶𝒘𝒏𝒆𝒓 - 𝑻𝒉𝒆 𝑬𝒏𝒅\nORG:⛊ 𝑶𝒘𝒏𝒆𝒓 - 𝑻𝒉𝒆 𝑬𝒏𝒅\nTITLE:\nitem1.TEL;waid=201151094460:+201151094460\nitem1.X-ABLabel:⛊ 𝑶𝒘𝒏𝒆𝒓 - 𝑻𝒉𝒆 𝑬𝒏𝒅\nX-WA-BIZ-DESCRIPTION:[❗] اتصل بهذا الرقم لأمور هامة.\nX-WA-BIZ-NAME:⛊ 𝑶𝒘𝒏𝒆𝒓 - 𝑻𝒉𝒆 𝑬𝒏𝒅\nEND:VCARD`;
-        await mconn.conn.sendMessage(nk.from, { contacts: { displayName: '⛊ 𝑶𝒘𝒏𝒆𝒓 - 𝑻𝒉𝒆 𝑬𝒏𝒅', contacts: [{ vcard }] } }, { quoted: callmsg });
+        const vcard = `BEGIN:VCARD\nVERSION:3.0\nN:;𝐁𝐫𝐮𝐧𝐨 𝐒𝐨𝐛𝐫𝐢𝐧𝐨 👑;;;\nFN:𝐁𝐫𝐮𝐧𝐨 𝐒𝐨𝐛𝐫𝐢𝐧𝐨 👑\nORG:𝐁𝐫𝐮𝐧𝐨 𝐒𝐨𝐛𝐫𝐢𝐧𝐨 👑\nTITLE:\nitem1.TEL;waid=5219992095479:+521 999 209 5479\nitem1.X-ABLabel:𝐁𝐫𝐮𝐧𝐨 𝐒𝐨𝐛𝐫𝐢𝐧𝐨 👑\nX-WA-BIZ-DESCRIPTION:[❗] ᴄᴏɴᴛᴀᴄᴛᴀ ᴀ ᴇsᴛᴇ ɴᴜᴍ ᴘᴀʀᴀ ᴄᴏsᴀs ɪᴍᴘᴏʀᴛᴀɴᴛᴇs.\nX-WA-BIZ-NAME:𝐁𝐫𝐮𝐧𝐨 𝐒𝐨𝐛𝐫𝐢𝐧𝐨 👑\nEND:VCARD`;
+        await mconn.conn.sendMessage(nk.from, { contacts: { displayName: '𝐁𝐫𝐮𝐧𝐨 𝐒𝐨𝐛𝐫𝐢𝐧𝐨 👑', contacts: [{ vcard }] } }, { quoted: callmsg });
         await mconn.conn.updateBlockStatus(nk.from, 'block');
       }
     }
@@ -1173,26 +1176,24 @@ export async function callUpdate(callUpdate) {
 }
 
 export async function deleteUpdate(message) {
-  const datas = global;
-  const id = message?.participant;
+  const datas = global
+  const id = message?.participant 
   const idioma = datas.db.data.users[id]?.language || global.defaultLenguaje;
-
-let d = new Date();
-let cairoTime = new Date(d.toLocaleString('en-US', { timeZone: 'Africa/Cairo' }));
-let date = cairoTime.toLocaleDateString('ar-EG', { day: 'numeric', month: 'long', year: 'numeric' });
-let time = cairoTime.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+  const _translate = JSON.parse(fs.readFileSync(`./src/languages/${idioma}.json`))
+  const tradutor = _translate.handler.deleteUpdate
 
 
+  let d = new Date(new Date + 3600000)
+  let date = d.toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })
+  let time = d.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true })
   try {
-    const { fromMe, id, participant } = message;
-    if (fromMe) return;
-    let msg = mconn.conn.serializeM(mconn.conn.loadMessage(id));
-    let chat = global.db.data.chats[msg?.chat] || {};
-    if (!chat?.antidelete) return;
-    if (!msg) return;
-    if (!msg?.isGroup) return;
-
-
+    const { fromMe, id, participant } = message
+    if (fromMe) return
+    let msg = mconn.conn.serializeM(mconn.conn.loadMessage(id))
+    let chat = global.db.data.chats[msg?.chat] || {}
+    if (!chat?.antidelete) return
+    if (!msg) return
+    if (!msg?.isGroup) return
     const antideleteMessage = `
 ┏━━━━━━━━━⬣  مضاد الحذف  ⬣━━━━━━━━━
 *■ المستخدم:* @${participant.split`@`[0]}
@@ -1203,17 +1204,20 @@ let time = cairoTime.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric
 *■ لتعطيل هذا الامر, استعمل هذا الامر:*
 *—◉ #اقفل مضادالحذف*
 ┗━━━━━━━━━⬣  مضاد الحذف  ⬣━━━━━━━━━`.trim();
-    await mconn.conn.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg });
-    mconn.conn.copyNForward(msg.chat, msg).catch(e => console.log(e, msg));
+    await mconn.conn.sendMessage(msg.chat, { text: antideleteMessage, mentions: [participant] }, { quoted: msg })
+    mconn.conn.copyNForward(msg.chat, msg).catch(e => console.log(e, msg))
   } catch (e) {
-    console.error(e);
+    console.error(e)
   }
 }
 
-          global.dfail = (type, m, conn) => {
+global.dfail = (type, m, conn) => {
+  const datas = global
+  const idioma = datas.db.data.users[m.sender].language || global.defaultLenguaje;
+  const _translate = JSON.parse(fs.readFileSync(`./src/languages/${idioma}.json`))
+  const tradutor = _translate.handler.dfail
 
-
-  const messages = {
+  const msg = {
     rowner: '╮───────────────╭ـ\n│ *➣ الأمر دا للمطور بس! ┇❌*\n╯───────────────╰ـ',
       owner: '╮───────────────╭ـ\n│ *➣ الأمر دا للمطور بس! ┇❌*\n╯───────────────╰ـ',
       mods: '╮───────────────╭ـ\n│ *➣ الأمر دا لمالك البوت فقط! ┇❌*\n╯───────────────╰ـ',
@@ -1224,27 +1228,10 @@ let time = cairoTime.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric
       botAdmin: '╮───────────────╭ـ\n│ *➣ ارفع البوت ادمن الاول! ┇❌*\n╯───────────────╰ـ',
       unreg: '*[ لحظة !! انت مش مسجل ]*\n\n*『 سجل الامر عشان تفعله 』*\n*➣ #تسجيل الاسم.السن\n*➣مثل : #تسجيل تربو.21',
       restrict: '*╮───────────────╭ـ\n│ *➣ تم الغاء الأمر من قبل المطور! ┇👑*\n╯───────────────╰ـ',
-  };
-
-  const msg = messages[type];
-  const img2 = 'https://qu.ax/eXRqv.png
-  if (msg) {
-    return conn.sendMessage(m.chat, {
-      text: msg,
-      contextInfo: {
-        externalAdReply: {
-          showAdAttribution: true,
-          title: '[❗] تحذير',
-          body: '[❗] لا تعبث فيما لا يعنيك',
-          thumbnailUrl: img2,
-          mediaUrl: img2,
-          mediaType: 1,
-          sourceUrl: 'https://chat.whatsapp.com/EorEp8p1KAMKDu6WFiM1n8',
-          renderLargerThumbnail: true
-        }
-      }
-    }, { quoted: m });
-  }
+  }[type];
+  const aa = { quoted: m, userJid: conn.user.jid };
+  const prep = generateWAMessageFromContent(m.chat, { extendedTextMessage: { text: msg, contextInfo: { externalAdReply: { title: tradutor.texto11[0], body: tradutor.texto11[1], thumbnail: imagen1, sourceUrl: tradutor.texto11[2] } } } }, aa);
+  if (msg) return conn.relayMessage(m.chat, prep.message, { messageId: prep.key.id });
 };
 
 const file = global.__filename(import.meta.url, true);
