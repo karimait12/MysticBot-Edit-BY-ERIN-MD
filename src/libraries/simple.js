@@ -264,6 +264,104 @@ END:VCARD
       }
     },	
  
+sendDKButton: {
+    async value(jid, message, quoted, buffer) {
+        let img, video, headerup;
+        buffer = message.image ? message.image : message.video;
+
+        if (/^https?:\/\//i.test(buffer)) {
+            try {
+                const response = await fetch(buffer);
+                const contentType = response.headers.get('content-type');
+                if (/^image\//i.test(contentType)) {
+                    img = await prepareWAMessageMedia({ image: { url: buffer } }, { upload: conn.waUploadToServer });
+                } else if (/^video\//i.test(contentType)) {
+                    video = await prepareWAMessageMedia({ video: { url: buffer } }, { upload: conn.waUploadToServer });
+                } else {
+                    console.error("Tipo MIME no compatible:", contentType);
+                }
+            } catch (error) {
+                console.error("Error al obtener el tipo MIME:", error);
+            }
+        } else {
+            try {
+                const type = await conn.getFile(buffer);
+                if (/^image\//i.test(type.mime)) {
+                    img = await prepareWAMessageMedia({ image: { url: buffer } }, { upload: conn.waUploadToServer });
+                } else if (/^video\//i.test(type.mime)) {
+                    video = await prepareWAMessageMedia({ video: { url: buffer } }, { upload: conn.waUploadToServer });
+                }
+            } catch (error) {
+                console.error("Error al obtener el tipo de archivo:", error);
+            }
+        }
+
+        if (!img && !video) {
+            headerup = {
+                hasMediaAttachment: false,
+                title: message.title ? message.title : null
+            };
+        } else {
+            headerup = {
+                hasMediaAttachment: true,
+                imageMessage: img ? img.imageMessage : null,
+                videoMessage: video ? video.videoMessage : null,
+                title: message.title ? message.title : null
+            };
+        }
+
+        const filteredButtons = message.buttons.filter(btn => {
+            if (typeof btn.buttonParamsJson === 'string' && btn.buttonParamsJson) {
+                try {
+                    btn.buttonParamsJson = JSON.parse(btn.buttonParamsJson);
+                } catch (e) {}
+            }
+            return btn.name !== 'send_location';
+        }).map(btn => ({
+            ...btn,
+            buttonParamsJson: typeof btn.buttonParamsJson === 'object' 
+                ? JSON.stringify(btn.buttonParamsJson)
+                : btn.buttonParamsJson || ''
+        }));
+
+        const msg = generateWAMessageFromContent(jid, {
+            viewOnceMessage: {
+                message: {
+                    messageContextInfo: {
+                        deviceListMetadata: {},
+                        deviceListMetadataVersion: 2
+                    },
+                    interactiveMessage: proto.Message.InteractiveMessage.create({
+                        body: proto.Message.InteractiveMessage.Body.create({
+                            text: message.text,
+                        }),
+                        header: proto.Message.InteractiveMessage.Header.create(headerup),
+                        footer: proto.Message.InteractiveMessage.Footer.create({
+                            text: message.footer
+                        }),
+                        nativeFlowMessage: proto.Message.InteractiveMessage.NativeFlowMessage.create({
+                            buttons: filteredButtons
+                        }),
+                        ...Object.assign({
+                            mentions: await conn.parseMention(message.title || null),
+                            contextInfo: {
+                                mentionedJid: await conn.parseMention(message.title || null),
+                                isForwarded: true,
+                                forwardedNewsletterMessageInfo: {
+                                    newsletterJid: '120363308501750930@newsletter',
+                                    newsletterName: '『𝐒𝐔𝐏𝐏𝐎𝐑𝐓-𝐍𝐀𝐍𝐎-𝐁𝐎𝐓』'
+                                }
+                            }
+                        }),
+                    })
+                }
+            }
+        }, { userJid: conn.user.jid, quoted });
+
+        return conn.relayMessage(jid, msg.message, { messageId: msg.key.id });
+    }
+},
+
         sendList: {
             async value(jid, title, text, footer, buttonText, buffer, listSections, quoted, options) {
      if (buffer) try { (type = await conn.getFile(buffer), buffer = type.data) } catch { buffer = buffer }
