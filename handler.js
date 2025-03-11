@@ -32,12 +32,7 @@ export async function handler(chatUpdate) {
   }
   this.pushMessage(chatUpdate.messages).catch(console.error);
   let m = chatUpdate.messages[chatUpdate.messages.length - 1];
-  if (!m) {
-    return;
-  }
-if (m.fromMe) {
-     return;
- }
+ if (m.fromMe) return;
   if (global.db.data == null) await global.loadDatabase();
   /* Creditos a Otosaka (https://wa.me/51993966345) */
 
@@ -46,9 +41,7 @@ if (m.fromMe) {
   /* ------------------------------------------------*/
   try {
     m = smsg(this, m) || m;
-    if (!m) {
-      return;
-    }
+ if (m.fromMe) return;
     global.mconn = m
     mconn = m
     m.exp = 0;
