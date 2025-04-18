@@ -104,15 +104,16 @@
 <hr>
 
 <h3>منصة ميناتو</h3>
-### رابط المنصه : https://dash.al-musabi.store/home
+## رابط المنصه : https://dash.al-musabi.store/home
 ### رابط البانيل  : https://panel.al-musabi.store
 <hr>
 <h3>منصة فلاش</h3>
-### رابط المنصه : https://dash.flash-hosting.store/home
-### رابط البانيل  : https://panel.flash-hosting.store
+
+## رابط المنصه : https://dash.flash-hosting.store/home
+## رابط البانيل  : https://panel.flash-hosting.store
 <hr>
 <h3>منصة ميجا</h3>
 
-### رابط المنصه : https://host.joanimi-world.site
-### رابط البانيل  : https://panel.joanimi-world.site
+## رابط المنصه : https://host.joanimi-world.site
+## رابط البانيل  : https://panel.joanimi-world.site
 
