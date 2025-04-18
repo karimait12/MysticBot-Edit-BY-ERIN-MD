@@ -43,7 +43,7 @@
     "async-lock": "latest",
     "awesome-phonenumber": "latest",
     "axios": "latest",
-    "baileys": "github:kangfarrel/felzar-Baileys",
+    "baileys": "npm:@baileys-pro@^0.0.2",
     "body-parser": "latest",
     "canvas": "latest",
     "cfonts": "latest",
