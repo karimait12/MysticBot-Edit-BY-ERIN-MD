@@ -98,4 +98,21 @@
 
 
 > ملاحظة: لا تنسوا ⭐ لمشاريعي لتشجيعي على المزيد من الإبداع! 😉
-### رابط قمناة المطور : https://whatsapp.com/channel/0029VaiUhw5BFLgV89U3rT18 
+### رابط قناة المطور : https://whatsapp.com/channel/0029VaiUhw5BFLgV89U3rT18
+
+<h2>منصات لرفع السكريبت</h2>
+<hr>
+
+<h3>منصة ميناتو</h3>
+### رابط المنصه : https://dash.al-musabi.store/home
+### رابط البانيل  : https://panel.al-musabi.store
+<hr>
+<h3>منصة فلاش</h3>
+### رابط المنصه : https://dash.flash-hosting.store/home
+### رابط البانيل  : https://panel.flash-hosting.store
+<hr>
+<h3>منصة ميجا</h3>
+
+### رابط المنصه : https://host.joanimi-world.site
+### رابط البانيل  : https://panel.joanimi-world.site
+
