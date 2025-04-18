@@ -102,8 +102,9 @@
 
 <h2>منصات لرفع السكريبت</h2>
 <hr>
-<hr>
+
 <h3>منصة ميناتو</h3>
+<hr>
 ## رابط المنصه : https://dash.al-musabi.store/home
 ## رابط البانيل  : https://panel.al-musabi.store
 <hr>
