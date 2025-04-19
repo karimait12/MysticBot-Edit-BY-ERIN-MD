@@ -37,7 +37,6 @@
     "@sefinek/google-tts-api": "latest",
     "@shineiichijo/marika": "latest",
     "@vitalets/google-translate-api": "latest",
-    "@whiskeysockets/baileys": "github:kangfarrel/felzar-Baileys",
     "acrcloud": "latest",
     "aki-api": "latest",
     "aptoide-scraper": "github:DIEGO-OFC/dv-aptoide-scraper",
