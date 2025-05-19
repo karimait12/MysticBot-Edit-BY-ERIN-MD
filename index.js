@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 // المسار إلى مجلد الجلسة
-const sessionFolder = path.join(__dirname, 'session');
+const sessionFolder = path.join(__dirname, 'MysticSession');
 const credsPath = path.join(sessionFolder, 'creds.json');
 
 // إنشاء مجلد الجلسة إذا لم يكن موجودًا
