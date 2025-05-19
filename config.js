@@ -16,11 +16,11 @@ global.isBaileysFail = false
 global.defaultLenguaje = 'es';
 
 global.owner = [
-  ['201151094460', '👑 ERIN-MD 👑', true],
+  ['212679894168', '👑 ERIN-MD 👑', true],
 ];
 
-global.suittag = ['201151094460'];
-global.prems = ['201151094460'];
+global.suittag = ['212679894168'];
+global.prems = ['212679894168'];
 
 // API
 global.BASE_API_DELIRIUS = "https://delirius-apiofc.vercel.app";
@@ -65,7 +65,7 @@ global.mysticbot = 'https://github.com/BrunoSobrino/TheMystic-Bot-MD';
 global.waitt = '*⌛ _جاري التحميل▰▰▰▱▱▱▱▱_*';
 global.waittt = '*⌛ _جاري التحميل▰▰▰▱▱▱▱▱_*';
 global.waitttt = '*⌛ _جاري التحميل▰▰▰▱▱▱▱▱_*';
-global.nomorown = '201151094460';
+global.nomorown = '212679894168';
 global.pdoc = ['application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/msword', 'application/pdf', 'text/rtf'];
 global.cmenut = '❖––––––『';
 global.cmenub = '┊✦ ';
