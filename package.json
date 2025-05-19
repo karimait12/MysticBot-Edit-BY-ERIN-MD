@@ -40,8 +40,6 @@
 
     "eslintfix": "eslint --fix .",
 
-    "postinstall": "node pipdeps.js"
-
   },
 
   "homepage": "https://github.com/sayed-hamdey-2000/Ramses-Bot",
