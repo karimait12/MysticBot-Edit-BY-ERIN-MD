@@ -1,50 +1,140 @@
-import { makeWASocket, useMultiFileAuthState } from '@adiwajshing/baileys';
-import fs from 'fs';
+import { join, dirname } from 'path';
+import { createRequire } from 'module';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { setupMaster, fork } from 'cluster';
+import cfonts from 'cfonts';
+import readline from 'readline';
+import yargs from 'yargs';
+import chalk from 'chalk'; 
+import fs from 'fs'; 
+import './config.js';
 
-async function startWhatsAppBot() {
-  // للحصول على المسار الحقيقي للملف في وضع ESM
-  const __filename = fileURLToPath(import.meta.url);
-  const __dirname = dirname(__filename);
+const { PHONENUMBER_MCC } = await import('baileys');
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const require = createRequire(__dirname);
+const { say } = cfonts;
+const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+let isRunning = false;
 
-  // تحديد المسار الجديد لملف الاعتماد
-  const credsPath = join(__dirname, 'MysticSession', 'creds.json');
+const question = (texto) => new Promise((resolver) => rl.question(texto, resolver));
 
-  // تحميل ملف الاعتماد إذا وجد
-  let creds = {};
-  if (fs.existsSync(credsPath)) {
-    creds = JSON.parse(fs.readFileSync(credsPath, 'utf-8'));
+console.log(chalk.yellow.bold('—◉ㅤIniciando sistema...'));
+
+function verificarOCrearCarpetaAuth() {
+  const authPath = join(__dirname, global.authFile);
+  if (!fs.existsSync(authPath)) {
+    fs.mkdirSync(authPath, { recursive: true });
   }
+}
 
-  // إعداد الحالة باستخدام Baileys
-  const { state, saveCreds } = await useMultiFileAuthState(creds);
+function verificarCredsJson() {
+  const credsPath = join(__dirname, global.authFile, 'creds.json');
+  return fs.existsSync(credsPath);
+}
 
-  const sock = makeWASocket({
-    auth: state,
-    printQRInTerminal: true,
+function formatearNumeroTelefono(numero) {
+  let formattedNumber = numero.replace(/[^\d+]/g, '');
+  if (formattedNumber.startsWith('+52') && !formattedNumber.startsWith('+521')) {
+    formattedNumber = formattedNumber.replace('+52', '+521');
+  } else if (formattedNumber.startsWith('52') && !formattedNumber.startsWith('521')) {
+    formattedNumber = `+521${formattedNumber.slice(2)}`;
+  } else if (formattedNumber.startsWith('52') && formattedNumber.length >= 12) {
+    formattedNumber = `+${formattedNumber}`;
+  } else if (!formattedNumber.startsWith('+')) {
+    formattedNumber = `+${formattedNumber}`;
+  }
+  return formattedNumber;
+}
+
+function esNumeroValido(numeroTelefono) {
+  const numeroSinSigno = numeroTelefono.replace('+', '');
+  return Object.keys(PHONENUMBER_MCC).some(codigo => numeroSinSigno.startsWith(codigo));
+}
+
+async function start(file) {
+  if (isRunning) return;
+  isRunning = true;
+
+  say('The Mystic\nBot', {
+    font: 'chrome',
+    align: 'center',
+    gradient: ['red', 'magenta'],
   });
 
-  // حفظ الاعتماد عند تغييره
-  sock.ev.on('creds.update', saveCreds);
+  say(`Edit BY ERIN-MD`, {
+    font: 'console',
+    align: 'center',
+    gradient: ['red', 'magenta'],
+  });
 
-  // استقبال الرسائل
-  sock.ev.on('messages.upsert', async (messageUpdate) => {
-    const msg = messageUpdate.messages[0];
-    if (!msg.key.fromMe && msg.message) {
-      const text = msg.message.conversation
-        || msg.message.extendedTextMessage?.text
-        || '';
-      console.log(`رسالة واردة من ${msg.key.remoteJid}: ${text}`);
+  verificarOCrearCarpetaAuth();
 
-      // إرسال رد
-      await sock.sendMessage(msg.key.remoteJid, { text: 'مرحبًا! كيف يمكنني مساعدتك؟' });
+  if (verificarCredsJson()) {
+    const args = [join(__dirname, file), ...process.argv.slice(2)];
+    setupMaster({ exec: args[0], args: args.slice(1) });
+    const p = fork();
+    return;
+  }
+
+  const opcion = await question(chalk.yellowBright.bold('[ 💡 ]ㅤاختر خيارًا (فقط الرقم):\n') + chalk.white.bold('1. باستخدام كود QR\n2. باستخدام كود نصي من 8 أرقام\n—> '));
+
+  let numeroTelefono = '';
+  if (opcion === '2') {
+    const phoneNumber = await question(chalk.yellowBright.bold('\n[ 💡 ]ㅤأدخل رقم WhatsApp الخاص بك:\n') + chalk.white.bold('مثال: +201145624848\n—> '));
+    numeroTelefono = formatearNumeroTelefono(phoneNumber);
+    if (!esNumeroValido(numeroTelefono)) {
+      console.log(chalk.bgRed(chalk.white.bold('[ ❓ ] رقم غير صالح. تأكد من أنك كتبت رقمك بصيغة دولية وبدأت برمز الدولة.\nمثال:\n+201145624848\n')));
+      process.exit(0);
+    }
+    process.argv.push(numeroTelefono);
+  }
+
+  if (opcion === '1') {
+    process.argv.push('qr');
+  } else if (opcion === '2') {
+    process.argv.push('code');
+  }
+
+  const args = [join(__dirname, file), ...process.argv.slice(2)];
+  setupMaster({ exec: args[0], args: args.slice(1) });
+
+  const p = fork();
+
+  p.on('message', (data) => {
+    console.log(chalk.green.bold('[ 📑 ]ㅤتم الاستلام:'), data);
+    switch (data) {
+      case 'reset':
+        p.process.kill();
+        isRunning = false;
+        start.apply(this, arguments);
+        break;
+      case 'uptime':
+        p.send(process.uptime());
+        break;
     }
   });
 
-  console.log('بوت واتساب يعمل الآن...');
+  p.on('exit', (_, code) => {
+    isRunning = false;
+    console.error(chalk.red.bold('[ ⚠️ ] حدث خطأ غير متوقع:'), code);
+    p.process.kill();
+    isRunning = false;
+    start.apply(this, arguments);
+    if (process.env.pm_id) {
+      process.exit(1);
+    } else {
+      process.exit();
+    }
+  });
+
+  const opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
+  if (!opts['test']) {
+    if (!rl.listenerCount()) {
+      rl.on('line', (line) => {
+        p.emit('message', line.trim());
+      });
+    }
+  }
 }
 
-startWhatsAppBot().catch(err => {
-  console.error('فشل تشغيل البوت:', err);
-});
+start('main.js');
