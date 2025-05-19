@@ -8,7 +8,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // إعداد مسار الجلسة
-const sessionFolder = path.join(__dirname, 'session');
+const sessionFolder = path.join(__dirname, 'MysticSession');
 const credsPath = path.join(sessionFolder, 'creds.json');
 
 async function connectToWhatsApp() {
