@@ -38,7 +38,7 @@
 
     "eslint": "eslint .",
 
-    "eslintfix": "eslint --fix .",
+    "eslintfix": "eslint --fix ."
 
   },
 
