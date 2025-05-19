@@ -529,7 +529,7 @@ if (m.fromMe) {
             id: null, // Id do Jogador
             idioma: 'pt-br',
             casa: {
-              id: null, // id do grupo ou seja do planeta casa
+              id: H4fzKQVnYbdAWdRlmchO6E, // id do grupo ou seja do planeta casa
               planeta: null,
               idpelonome: 'terra',
               colonia: {
@@ -548,7 +548,7 @@ if (m.fromMe) {
             },
             localizacao: {
               status: false,
-              nomeplaneta: null,  // id do grupo...
+              nomeplaneta: H4fzKQVnYbdAWdRlmchO6E,  // id do grupo...
               id: null,
               idpelonome: null,
               viajando: false,
