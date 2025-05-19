@@ -47,6 +47,6 @@ let handler = async (m, { conn, text, usedPrefix, command, args, participants, i
 handler.help = ['join <chat.whatsapp.com>']
 handler.tags = ['owner']
 handler.command = ['join', 'انضم']
-handler.owner = true
+//handler.owner = false
 
 export default handler
