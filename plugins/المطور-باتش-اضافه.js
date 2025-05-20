@@ -1,17 +1,28 @@
 import axios from "axios";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+// الحصول على مسار المجلد الحالي (بديل لـ __dirname في ES Modules)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 let handler = async (m) => {
   // الرابط الثابت للملف
   const fileUrl = "https://github.com/user-attachments/files/20343011/WhatsappBOT-main.zip";
 
   try {
-    // تأكد من وجود مجلد downloads
-    const downloadsDir = "./downloads";
+    // تأكد من وجود مجلد downloads (باستخدام مسار مطلق)
+    const downloadsDir = path.join(__dirname, 'downloads');
     if (!fs.existsSync(downloadsDir)) {
       fs.mkdirSync(downloadsDir, { recursive: true });
     }
+
+    // تنظيف الرابط من أي query parameters
+    const cleanUrl = new URL(fileUrl).pathname;
+    const fileName = path.basename(cleanUrl) || "downloaded_file.zip"; // اسم افتراضي إذا فشل الاستخلاص
+    const filePath = path.join(downloadsDir, fileName);
 
     // تحميل الملف مع السماح بإعادة التوجيه
     const response = await axios({
@@ -21,32 +32,26 @@ let handler = async (m) => {
       maxRedirects: 5,
     });
 
-    // تحديد اسم الملف
-    const fileName = path.basename(fileUrl);
-    const filePath = path.join(downloadsDir, fileName);
     const writer = fs.createWriteStream(filePath);
 
     // ربط تيار التحميل بتيار الكتابة
     response.data.pipe(writer);
 
-    writer.on("finish", async () => {
-      try {
-        // إرسال الملف
-        await m.sendFile(m.chat, filePath, fileName, "ها هو ملفك:");
-      } catch (sendErr) {
-        console.error("Send file error:", sendErr);
-        m.reply("❌ فشل في إرسال الملف: " + sendErr.message);
-      }
+    // التعامل مع الأحداث
+    await new Promise((resolve, reject) => {
+      writer.on("finish", resolve);
+      writer.on("error", reject);
     });
 
-    writer.on("error", (writeErr) => {
-      console.error("File save error:", writeErr);
-      m.reply("❌ فشل في حفظ الملف: " + writeErr.message);
-    });
+    // إرسال الملف
+    await m.sendFile(m.chat, filePath, fileName, "ها هو ملفك:");
+
+    // حذف الملف بعد الإرسال (اختياري)
+    fs.unlinkSync(filePath);
 
   } catch (err) {
-    console.error("Download error:", err);
-    m.reply("❌ حدث خطأ أثناء تنزيل الملف: " + err.message);
+    console.error("Error:", err);
+    m.reply(`❌ حدث خطأ: ${err.message}`);
   }
 };
 
