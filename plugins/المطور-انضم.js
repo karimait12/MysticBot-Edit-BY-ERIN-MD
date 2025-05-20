@@ -5,7 +5,7 @@ let handler = async (m, { text }) => {
 
   try {
     let { data } = await axios.get(
-      `https://jazxcode.biz.id/ai/blackbox?query=${encodeURIComponent(text)}`
+      `https://innova.shawrma.store/api/v1/gpt3?text=${encodeURIComponent(text)}&prompt=انت+مساعد+في+شركتي+اسمك+مساعد+كريم`
     );
 
     if (data.status && data.response) {
