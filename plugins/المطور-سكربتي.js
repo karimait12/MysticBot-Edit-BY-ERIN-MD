@@ -1,5 +1,5 @@
-import { generateWAMessageFromContent } from "baileys";
 import axios from "axios";
+import { generateWAMessageFromContent } from "baileys";
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
   if (!text) return m.reply('أدخل اسم الأغنية للبحث\nمثال: *.spotify twice*');
@@ -12,26 +12,32 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
       return m.reply('⚠️ لم أجد أي نتائج!');
     }
 
-    // إنشاء Grid أنيق
-    const sections = [{
-      title: `نتائج البحث: ${text}`,
-      rows: data.data.map((song, index) => ({
-        title: `${index + 1}. ${song.title}`,
-        description: `🎤 ${song.artist} | ⏳ ${song.duration}\n📀 ${song.album}`,
-        rowId: `${usedPrefix}spotifydl ${song.url}`,
-        image: song.image
-      }))
-    }];
+    // إنشاء قائمة تفاعلية مع صور
+    const listItems = data.data.map((song, index) => ({
+      title: `${index + 1}. ${song.title}`,
+      description: `🎤 الفنان: ${song.artist}\n⏳ المدة: ${song.duration}\n📀 الألبوم: ${song.album}`,
+      image: song.image,
+      buttonText: "تحميل 🎧",
+      buttonId: `${usedPrefix}spotifydl ${song.url}`
+    }));
 
-    const listMessage = {
-      text: `🎵 *نتائج بحث Spotify* 🎵\n\nاختر الأغنية من القائمة:`,
-      footer: `المطور: darlingg`,
-      title: "𓆩 𝙎𝙋𝙊𝙏𝙄𝙁𝙔 𝙎𝙀𝘼𝙍𝘾𝙃 𓆪",
-      buttonText: "النتائج 🔎",
-      sections
+    const message = {
+      text: `🎵 *نتائج بحث Spotify* 🎵\n${text}\n\nإجمالي النتائج: ${data.data.length}`,
+      footer: "اختر رقم الأغنية للتحميل",
+      title: "𓆩 Spotify Search 𓆪",
+      buttonText: "عرض النتائج",
+      sections: [{
+        title: "الأغاني المتاحة",
+        rows: listItems.map((item, index) => ({
+          title: item.title,
+          description: item.description,
+          rowId: item.buttonId,
+          image: item.image
+        }))
+      }]
     };
 
-    await conn.sendMessage(m.chat, listMessage);
+    await conn.sendMessage(m.chat, message);
     
   } catch (error) {
     console.error(error);
