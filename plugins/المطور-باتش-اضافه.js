@@ -1,80 +1,65 @@
-import axios from "axios";
-import fs from "fs";
-import path from "path";
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import path, { join } from 'path';
+import fs from 'fs';
+import axios from "axios";
 
 let handler = async (m) => {
-  // رابط بديل للاختبار (إذا كان الرابط الأصلي يعطي 404)
-  const fileUrl = "https://dl.pramgplus.com/uploads/Zarchiver-v1.0.8_PramgPlus.Com.apk" || 
-                 "https://github.com/user-attachments/files/20343011/WhatsappBOT-main.zip";
+  const fileUrl = "https://dl.pramgplus.com/uploads/Zarchiver-v1.0.8_PramgPlus.Com.apk";
 
   try {
+    // إنشاء مجلد التحميلات إذا لم يكن موجوداً
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const downloadsDir = path.join(__dirname, 'downloads');
     if (!fs.existsSync(downloadsDir)) {
       fs.mkdirSync(downloadsDir, { recursive: true });
     }
 
-    // استخلاص اسم الملف بطريقة أكثر قوة
-    let fileName;
-    try {
-      const urlObj = new URL(fileUrl);
-      fileName = path.basename(urlObj.pathname) || `file_${Date.now()}.zip`;
-    } catch {
-      fileName = `file_${Date.now()}.zip`;
-    }
-
+    // استخلاص اسم الملف
+    const urlObj = new URL(fileUrl);
+    const fileName = path.basename(urlObj.pathname) || `file_${Date.now()}.zip`;
     const filePath = path.join(downloadsDir, fileName);
 
-    // إضافة headers لزيادة فرص النجاح
+    // التحميل مع تتبع التقدم
     const response = await axios({
       url: fileUrl,
       method: "GET",
       responseType: "stream",
-      maxRedirects: 5,
       headers: {
-        'User-Agent': 'Mozilla/5.0',
-        'Accept': '*/*'
+        'User-Agent': 'Mozilla/5.0'
       }
     });
 
     const writer = fs.createWriteStream(filePath);
-
-    // عرض تقدم التحميل
-    let downloadedBytes = 0;
-    const totalBytes = parseInt(response.headers['content-length'], 10);
-    
-    response.data.on('data', (chunk) => {
-      downloadedBytes += chunk.length;
-      const percent = totalBytes ? Math.round((downloadedBytes / totalBytes) * 100) : 0;
-      console.log(`Downloaded: ${percent}%`);
-    });
+    response.data.pipe(writer);
 
     await new Promise((resolve, reject) => {
-      writer.on("finish", resolve);
-      writer.on("error", reject);
-      response.data.pipe(writer);
+      writer.on('finish', resolve);
+      writer.on('error', reject);
     });
 
-    await m.sendFile(m.chat, filePath, fileName, "تم تحميل الملف بنجاح 🎉");
-    
+    // إرسال الملف باستخدام Baileys
+    await conn.sendMessage(m.chat, {
+      document: fs.readFileSync(filePath),
+      fileName: fileName,
+      mimetype: 'application/zip',
+      caption: 'ها هو ملفك المطلوب 📁'
+    }, { quoted: m });
+
     // تنظيف الملف المؤقت
     try {
       fs.unlinkSync(filePath);
     } catch (cleanError) {
-      console.error("Warning: Could not delete temp file:", cleanError);
+      console.error('Failed to delete temp file:', cleanError);
     }
 
   } catch (err) {
-    console.error("Full Error:", err);
-    
-    if (err.response?.status === 404) {
-      m.reply("⚠️ الرابط غير موجود أو انتهت صلاحيته (404)");
-    } else {
-      m.reply(`❌ حدث خطأ غير متوقع: ${err.message}`);
+    console.error('Error:', err);
+    if (typeof m.reply === 'function') {
+      if (err.response?.status === 404) {
+        await m.reply('❌ الرابط غير صحيح أو الملف غير موجود (404)');
+      } else {
+        await m.reply(`❌ حدث خطأ: ${err.message}`);
+      }
     }
   }
 };
