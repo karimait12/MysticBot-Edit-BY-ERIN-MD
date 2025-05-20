@@ -522,7 +522,7 @@ export async function handler(chatUpdate) {
             id: null, // Id do Jogador
             idioma: 'pt-br',
             casa: {
-              id: H4fzKQVnYbdAWdRlmchO6E, // id do grupo ou seja do planeta casa
+              id: null, // id do grupo ou seja do planeta casa
               planeta: null,
               idpelonome: 'terra',
               colonia: {
@@ -541,7 +541,7 @@ export async function handler(chatUpdate) {
             },
             localizacao: {
               status: false,
-              nomeplaneta: H4fzKQVnYbdAWdRlmchO6E,  // id do grupo...
+              nomeplaneta: null,  // id do grupo...
               id: null,
               idpelonome: null,
               viajando: false,
