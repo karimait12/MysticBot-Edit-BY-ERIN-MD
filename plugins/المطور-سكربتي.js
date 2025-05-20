@@ -1,42 +1,59 @@
 import axios from "axios";
 
-// تخزين مؤقت للنتائج
-const spotifyCache = new Map();
+// ذاكرة مؤقتة لتخزين نتائج البحث
+const appleMusicCache = new Map();
 
 let handler = async (m, { conn, text, usedPrefix, command }) => {
-  // معالجة الأوامر الفرعية (الاختيار بالرقم)
+  // معالجة اختيار الأغنية بالرقم
   if (/^spotify\s+\d+$/i.test(m.text)) {
     const index = parseInt(m.text.match(/\d+/)[0]) - 1;
     const cacheKey = m.chat + '_' + m.sender;
     
-    if (!spotifyCache.has(cacheKey)) {
-      return m.reply('انتهت صلاحية النتائج، ابحث مرة أخرى!');
+    if (!appleMusicCache.has(cacheKey)) {
+      return m.reply('⚠️ انتهت صلاحية النتائج، ابحث مرة أخرى!');
     }
     
-    const results = spotifyCache.get(cacheKey);
-    if (index >= results.length) {
-      return m.reply('رقم غير صالح!');
+    const results = appleMusicCache.get(cacheKey);
+    if (index >= results.length || index < 0) {
+      return m.reply('❌ رقم غير صالح!');
     }
     
-    const song = results[index];
-    await m.reply(`⬇️ جاري تحميل: *${song.title}*...`);
-    // أضف هنا كود التحميل الفعلي
-    return conn.sendMessage(m.chat, { 
-      audio: { url: song.preview_url }, 
-      mimetype: 'audio/mpeg', 
-      contextInfo: { externalAdReply: {
-        title: song.title,
-        body: `🎤 ${song.artist}`,
-        thumbnail: await (await conn.getFile(song.image)).data
-      }}
-    });
+    const selectedTrack = results[index];
+    try {
+      // جلب رابط التحميل
+      const dlUrl = `https://delirius-apiofc.vercel.app/download/applemusicdl?url=${encodeURIComponent(selectedTrack.url)}`;
+      const { data } = await axios.get(dlUrl);
+      
+      if (!data.status || !data.data.download) {
+        throw new Error('فشل في الحصول على رابط التحميل');
+      }
+
+      // إرسال الأغنية
+      await conn.sendMessage(m.chat, { 
+        audio: { url: data.data.download }, 
+        mimetype: 'audio/mpeg',
+        contextInfo: {
+          externalAdReply: {
+            title: selectedTrack.title,
+            body: `🎤 ${selectedTrack.artist}`,
+            thumbnail: await (await conn.getFile(selectedTrack.image)).data,
+            mediaType: 1
+          }
+        }
+      }, { quoted: m });
+
+    } catch (error) {
+      console.error(error);
+      m.reply('❌ فشل في تحميل الأغنية!');
+    }
+    return;
   }
 
-  // البحث العادي
+  // عملية البحث الأساسية
   if (!text) return m.reply(`⚡ مثال الاستخدام:\n${usedPrefix}spotify twice`);
   
   try {
-    const { data } = await axios.get(`https://delirius-apiofc.vercel.app/search/spotify?q=${encodeURIComponent(text)}&limit=10`);
+    const { data } = await axios.get(`https://delirius-apiofc.vercel.app/search/applemusicv2?query=${encodeURIComponent(text)}`);
     
     if (!data?.data?.length) {
       return m.reply('⚠️ لا توجد نتائج!');
@@ -44,25 +61,24 @@ let handler = async (m, { conn, text, usedPrefix, command }) => {
 
     // حفظ النتائج في الذاكرة المؤقتة
     const cacheKey = m.chat + '_' + m.sender;
-    spotifyCache.set(cacheKey, data.data);
-    setTimeout(() => spotifyCache.delete(cacheKey), 60000); // انتهاء بعد دقيقة
+    appleMusicCache.set(cacheKey, data.data);
+    setTimeout(() => appleMusicCache.delete(cacheKey), 120000); // انتهاء بعد دقيقتين
 
-    // إنشاء قائمة مرقمة
+    // إنشاء قائمة النتائج
     const songsList = data.data.map((song, i) => 
-      `*${i + 1}.* [${song.duration}] ─ 🎧 *${song.title}*\n` +
+      `*${i + 1}.* 🎧 *${song.title}*\n` +
       `   👤 ${song.artist}\n` +
-      `   📀 ${song.album}\n` +
-      `   📆 ${song.publish}\n` +
-      `   ⭐ ${song.popularity}\n━━━━━━━━━━━━━`
+      `   📀 ${song.url.split('/').pop()}\n` +
+      `━━━━━━━━━━━━━`
     ).join('\n');
 
     await conn.sendMessage(m.chat, {
-      text: `🎵 *نتائج بحث Spotify عن "${text}"*\n\n${songsList}\n\n` +
+      text: `🎵 *نتائج بحث Apple Music عن "${text}"*\n\n${songsList}\n\n` +
             `_رد برقم الأغنية للتحميل (مثال: ${usedPrefix}spotify 2)_\n` +
-            `_النتائج صالحة لمدة 60 ثانية_`,
+            `_النتائج صالحة لمدة 120 ثانية_`,
       contextInfo: {
         externalAdReply: {
-          title: '🔍 Spotify Search',
+          title: '🔍 Apple Music Search',
           body: 'اختر أغنية للتحميل',
           thumbnail: await (await conn.getFile(data.data[0].image)).data,
           mediaType: 1
