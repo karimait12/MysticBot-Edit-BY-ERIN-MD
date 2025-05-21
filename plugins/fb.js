@@ -1,82 +1,125 @@
-const axios = require('axios');
-const fs = require('fs');
-const path = require('path');
+import axios from 'axios';
 
-let handler = async (m, { conn, args }) => {
-    try {
-        const url = args[0];
+const handler = async (m, { conn, args, command }) => {
+  const url = args[0];
 
-        if (!url) throw '❗ يرجى إدخال رابط فيديو الفيسبوك\nمثال: .fb https://www.facebook.com/...';
+  if (!url) {
+    return m.reply(
+      `🧞 طريقة الاستخدام:\n` +
+      `أرسل الأمر *.${command}* متبوعًا برابط فيديو الفيسبوك.\n` +
+      `مثال:\n.fb https://www.facebook.com/... \n\n` +
+      `🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞`
+    );
+  }
 
-        // تحقق من رابط الفيسبوك
-        if (!/(facebook\.com|fb\.watch)/i.test(url)) {
-            throw '⚠️ هذا ليس رابط فيديو فيسبوك صحيح';
-        }
-
-        // إرسال رد فعل انتظار
-        await conn.sendReact(m.chat, m.key, '⏳');
-
-        // جلب بيانات الفيديو من API الجديد
-        const apiUrl = `https://delirius-apiofc.vercel.app/download/facebook?url=${encodeURIComponent(url)}`;
-        const { data } = await axios.get(apiUrl);
-
-        if (!data?.urls?.length) {
-            throw '❌ تعذر العثور على الفيديو، يرجى التأكد من الرابط';
-        }
-
-        const videoUrl = data.urls[0].hd || data.urls[0].sd;
-        const videoTitle = data.title || "فيديو فيسبوك";
-
-        // إنشاء مجلد مؤقت
-        const tmpDir = path.join(process.cwd(), 'tmp');
-        if (!fs.existsSync(tmpDir)) {
-            fs.mkdirSync(tmpDir, { recursive: true });
-        }
-
-        // مسار الملف المؤقت
-        const tempFile = path.join(tmpDir, `fb_${Date.now()}.mp4`);
-
-        // تنزيل الفيديو
-        const videoResponse = await axios({
-            method: 'GET',
-            url: videoUrl,
-            responseType: 'stream',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                'Referer': 'https://www.facebook.com/'
-            }
-        });
-
-        const writer = fs.createWriteStream(tempFile);
-        videoResponse.data.pipe(writer);
-
-        await new Promise((resolve, reject) => {
-            writer.on('finish', resolve);
-            writer.on('error', reject);
-        });
-
-        // إرسال الفيديو
-        await conn.sendMessage(m.chat, {
-            video: fs.readFileSync(tempFile),
-            mimetype: "video/mp4",
-            caption: `🎬 ${videoTitle}\nتم التنزيل بواسطة البوت`
-        }, { quoted: m });
-
-        // حذف الملف المؤقت
-        fs.unlinkSync(tempFile);
-
-        // إرسال رد فعل نجاح
-        await conn.sendReact(m.chat, m.key, '✅');
-
-    } catch (error) {
-        // إرسال رد فعل فشل
-        await conn.sendReact(m.chat, m.key, '❌');
-        throw `❌ حدث خطأ: ${error.message || error}`;
+  await conn.sendMessage(m.chat, {
+    react: {
+      text: "⏳",
+      key: m.key
     }
+  });
+
+  const result = await fbDownloader(url);
+
+  if (!result.status) {
+    return m.reply(`🧞 ${result.result.error}\n\n🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞`);
+  }
+
+  const { title, download, image } = result.result;
+  const caption =
+    `🧞 *تم التحميل من Facebook:*\n\n` +
+    `🎥 *العنوان:* ${title}\n\n` +
+    `🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞`;
+
+  try {
+    const videoRes = await axios.get(download, { responseType: 'arraybuffer' });
+
+    await conn.sendMessage(m.chat, {
+      text: caption,
+      contextInfo: {
+        externalAdReply: {
+          title: title,
+          body: 'Facebook 🧞',
+          thumbnailUrl: image,
+          sourceUrl: url,
+          mediaType: 1,
+          renderLargerThumbnail: true
+        }
+      }
+    }, { quoted: m });
+
+    await conn.sendMessage(m.chat, {
+      video: Buffer.from(videoRes.data),
+      mimetype: 'video/mp4',
+      fileName: `${title}.mp4`
+    }, { quoted: m });
+
+    await conn.sendMessage(m.chat, {
+      react: {
+        text: "✅",
+        key: m.key
+      }
+    });
+  } catch (err) {
+    console.error(err);
+    await conn.sendMessage(m.chat, {
+      react: {
+        text: "❌",
+        key: m.key
+      }
+    });
+    m.reply('🧞 حدث خطأ أثناء إرسال الفيديو. حاول مرة أخرى لاحقًا.\n\n🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞');
+  }
 };
 
-handler.help = ['fb <رابط>'];
+handler.command = ['fb', 'facebook', 'فيسبوك'];
+handler.help = ['fb <link>', 'فيسبوك <رابط>'];
 handler.tags = ['downloader'];
-handler.command = /^(fb|فيسبوك|فيس)$/i;
+handler.limit = true;
 
 export default handler;
+
+async function fbDownloader(url) {
+  if (!/(facebook\.com|fb\.watch)/i.test(url)) {
+    return {
+      status: false,
+      code: 400,
+      result: {
+        error: "🧞 هذا ليس رابط فيديو فيسبوك صحيح"
+      }
+    };
+  }
+
+  try {
+    const apiUrl = `https://delirius-apiofc.vercel.app/download/facebook?url=${encodeURIComponent(url)}`;
+    const { data } = await axios.get(apiUrl);
+
+    if (!data?.urls?.length) {
+      return {
+        status: false,
+        code: 404,
+        result: {
+          error: "🧞 لم يتم العثور على الفيديو. تأكد من الرابط!"
+        }
+      };
+    }
+
+    return {
+      status: true,
+      code: 200,
+      result: {
+        title: data.title,
+        image: data.image || '',
+        download: data.urls[0].hd || data.urls[0].sd
+      }
+    };
+  } catch (error) {
+    return {
+      status: false,
+      code: error.response?.status || 500,
+      result: {
+        error: "🧞 فشل في جلب بيانات الفيديو من فيسبوك 🙈"
+      }
+    };
+  }
+}
