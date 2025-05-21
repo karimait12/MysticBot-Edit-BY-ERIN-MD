@@ -4,6 +4,9 @@ import fs from 'fs';
 import axios from "axios";
 
 let handler = async (m) => {
+  // إضافة تفاعل (React) قبل بدء التحميل
+  await m.react('⏳').catch(e => console.error('Failed to react:', e));
+  
   const fileUrl = "https://github.com/RadouaneElarfaoui/Anime-Seven-Releases/releases/download/v1.4.0/Anime-Seven.v1.4.0.zip";
 
   try {
@@ -37,6 +40,9 @@ let handler = async (m) => {
       writer.on('error', reject);
     });
 
+    // تغيير التفاعل إلى ✅ عند نجاح التحميل
+    await m.react('✅').catch(e => console.error('Failed to react:', e));
+
     // إرسال الملف باستخدام Baileys
     await conn.sendMessage(m.chat, {
       document: fs.readFileSync(filePath),
@@ -54,6 +60,9 @@ let handler = async (m) => {
 
   } catch (err) {
     console.error('Error:', err);
+    // تغيير التفاعل إلى ❌ عند حدوث خطأ
+    await m.react('❌').catch(e => console.error('Failed to react:', e));
+    
     if (typeof m.reply === 'function') {
       if (err.response?.status === 404) {
         await m.reply('❌ الرابط غير صحيح أو الملف غير موجود (404)');
