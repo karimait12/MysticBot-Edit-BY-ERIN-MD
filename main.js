@@ -415,12 +415,7 @@ global.reloadHandler = async function(restatConn) {
   // busque la clave "handler" dentro del json y cámbiela si es necesario
    conn.welcome = '👋 مرحباً بك!\n@user';
   conn.bye = '👋 إلى اللقاء!\n@user';
-  conn.spromote = '*[ ℹ️ ] @user تمت ترقيته إلى مشرف.*';
-  conn.sdemote = '*[ ℹ️ ] @user تم تخفيضه من مشرف.*';
-  conn.sDesc = '*[ ℹ️ ] تم تعديل وصف المجموعة.*';
-  conn.sSubject = '*[ ℹ️ ] تم تعديل اسم المجموعة.*';
-  conn.sIcon = '*[ ℹ️ ] تم تغيير صورة الملف الشخصي للمجموعة.*';
-  conn.sRevoke = '*[ ℹ️ ] تم إعادة تعيين رابط دعوة المجموعة.*';
+
 
   conn.handler = handler.handler.bind(global.conn);
   conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
