@@ -1,74 +1,162 @@
 import axios from 'axios';
 
-async function spotifydl(spotifyUrl) {
-    try {
-        const apiUrl = `https://api.fabdl.com/spotify/get?url=${encodeURIComponent(spotifyUrl)}`;
-        const response = await axios.get(apiUrl);
-        const trackData = response.data.result;
+const handler = async (m, { conn, args, command }) => {
+  const text = args[0];
 
-        if (!trackData) {
-            throw new Error('Failed to retrieve track information from Spotify.');
-        }
+  if (!text) {
+    return m.reply(
+      `🧞 طريقة الاستخدام:\n` +
+      `أرسل الأمر *.${command}* متبوعًا برابط أو ID المسار من سبوتيفاي.\n` +
+      `مثال:\n.spotify https://open.spotify.com/track/xxxxxxxxxxxxxxxxxxxxxx\n\n` +
+      `🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞`
+    );
+  }
 
-        const { id, name, image, artists, duration_ms } = trackData;
-        const convertUrl = `https://api.fabdl.com/spotify/mp3-convert-task/${trackData.gid}/${id}`;
-        const conversionResponse = await axios.get(convertUrl);
-        const conversionData = conversionResponse.data.result;
+  await conn.sendMessage(m.chat, {
+    react: {
+      text: "🧞",
+      key: m.key
+    }
+  });
 
-        if (!conversionData || !conversionData.download_url) {
-            throw new Error('Failed to retrieve MP3 download URL from the conversion task.');
-        }
+  const result = await spotiDown(text);
 
-        const downloadUrl = `https://api.fabdl.com${conversionData.download_url}`;
+  if (!result.status) {
+    return m.reply(`🧞 ${result.result.error}\n\n🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞`);
+  }
 
-        return {
-            artist: artists,
-            title: name,
-            duration: Math.ceil(duration_ms / 1000),
-            thumbnail: image,
-            audioUrl: downloadUrl
-        };
-    } catch (error) {
-        console.error('Error retrieving Spotify data:', error);
-        return { error: 'Failed to fetch Spotify data', status: 1 };
-    }
-}
+  const { title, artist, album, duration, image, download, trackId } = result.result;
+  const caption =
+    `🧞 *تم التحميل من Spotify:*\n\n` +
+    `🎵 *العنوان:* ${title}\n` +
+    `🧑‍🎤 *الفنان:* ${artist}\n` +
+    `💿 *الألبوم:* ${album}\n` +
+    `⏱️ *المدة:* ${duration}\n\n` +
+    `🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞`;
 
-let handler = async (m, { conn, args }) => {
-    const [url] = args;
+  try {
+    const audioRes = await axios.get(download, { responseType: 'arraybuffer' });
 
-    if (!url) {
-        return conn.reply(m.chat, 'Please provide a Spotify track URL. \n.spotify https://open.spotify.com/track/2Tp8vm7MZIb1nnx1qEGYv5', m);
-    }
+    await conn.sendMessage(m.chat, {
+      text: caption,
+      contextInfo: {
+        externalAdReply: {
+          title: title,
+          body: 'Spotify 🧞',
+          thumbnailUrl: image,
+          sourceUrl: `https://open.spotify.com/track/${trackId}`,
+          mediaType: 1,
+          renderLargerThumbnail: true
+        }
+      }
+    }, { quoted: m });
 
-    try {
-        const trackInfo = await spotifydl(url);
+    await conn.sendMessage(m.chat, {
+      audio: Buffer.from(audioRes.data),
+      mimetype: 'audio/mp4',
+      fileName: `${artist} - ${title}.mp3`,
+      ptt: false
+    }, { quoted: m });
 
-        if (trackInfo.error) {
-            return conn.reply(m.chat, `❌ Error: ${trackInfo.error}`, m);
-        }
-
-        const caption = `🎵 *Spotify Downloader*\n\n🔹 *Title:* ${trackInfo.title}\n🔹 *Artist:* ${trackInfo.artist}\n🔹 *Duration:* ${trackInfo.duration} sec`;
-
-        await conn.sendMessage(m.chat, {
-            image: { url: trackInfo.thumbnail },
-            caption
-        }, { quoted: m });
-
-        await conn.sendMessage(m.chat, {
-            document: { url: trackInfo.audioUrl },
-            mimetype: 'audio/mp3',
-            fileName: `${trackInfo.title}.mp3`,
-            caption: '🎧 Your Spotify track is ready!'
-        }, { quoted: m });
-
-    } catch (error) {
-        conn.reply(m.chat, `❌ Error: ${error.message}`, m);
-    }
+  } catch (err) {
+    console.error(err);
+    m.reply('🧞 حدث خطأ أثناء إرسال الملف الصوتي. حاول مرة أخرى لاحقًا.\n\n🅜🅘🅝🅐🅣🅞 🅑🅞🅣🧞');
+  }
 };
 
-handler.help = ['spotify1'];
+handler.command = ['spotify1', 'spot', 'سبوتيفاي'];
+handler.help = ['spotify1 <link/id>', 'سبوتيفاي <رابط/معرف>'];
 handler.tags = ['downloader'];
-handler.command = ['spotify1'];
-//handler.limit = true
+handler.limit = true;
+
 export default handler;
+
+async function spotiDown(url) {
+  const extractId = (input) => {
+    const patterns = [
+      /spotify\.com\/track\/([a-zA-Z0-9]{22})/,
+      /spotify:track:([a-zA-Z0-9]{22})/,
+      /^([a-zA-Z0-9]{22})$/
+    ];
+    for (const pattern of patterns) {
+      const match = input.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  const trackId = extractId(url);
+  if (!trackId) {
+    return {
+      status: false,
+      code: 400,
+      result: {
+        error: !url
+          ? "🧞 أين الرابط؟ الحقل فاضي يا زعيم 🗿"
+          : "🧞 رابط غير صالح! تأكد من الشكل الصحيح 😑"
+      }
+    };
+  }
+
+  const fullUrl = `https://open.spotify.com/track/${trackId}`;
+
+  try {
+    const response = await axios.post(
+      'https://parsevideoapi.videosolo.com/spotify-api/',
+      { format: 'web', url: fullUrl },
+      {
+        headers: {
+          'authority': 'parsevideoapi.videosolo.com',
+          'user-agent': 'Postify/1.0.0',
+          'referer': 'https://spotidown.online/',
+          'origin': 'https://spotidown.online'
+        }
+      }
+    );
+
+    const { status, data } = response.data;
+
+    if (status === "-4") {
+      return {
+        status: false,
+        code: 400,
+        result: {
+          error: "🧞 الرابط غير مدعوم. فقط مسارات (Tracks) مسموحة 😂"
+        }
+      };
+    }
+
+    const meta = data?.metadata;
+    if (!meta || Object.keys(meta).length === 0) {
+      return {
+        status: false,
+        code: 404,
+        result: {
+          error: "🧞 لم يتم العثور على معلومات عن المسار. جرب رابطًا آخر!"
+        }
+      };
+    }
+
+    return {
+      status: true,
+      code: 200,
+      result: {
+        title: meta.name,
+        artist: meta.artist,
+        album: meta.album,
+        duration: meta.duration,
+        image: meta.image,
+        download: meta.download,
+        trackId
+      }
+    };
+  } catch (error) {
+    return {
+      status: false,
+      code: error.response?.status || 500,
+      result: {
+        error: "🧞 فشل في جلب بيانات المسار من سبوتيفاي 🙈"
+      }
+    };
+  }
+}
