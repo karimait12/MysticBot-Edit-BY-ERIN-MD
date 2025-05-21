@@ -5,7 +5,7 @@ const path = require('path');
 let handler = async (m, { conn, args }) => {
     try {
         const url = args[0];
-        
+
         if (!url) throw '❗ يرجى إدخال رابط فيديو الفيسبوك\nمثال: .fb https://www.facebook.com/...';
 
         // تحقق من رابط الفيسبوك
@@ -14,18 +14,18 @@ let handler = async (m, { conn, args }) => {
         }
 
         // إرسال رد فعل انتظار
-        await m.react('⏳');
+        await conn.sendReact(m.chat, m.key, '⏳');
 
-        // جلب بيانات الفيديو من API
-        const apiUrl = `https://api.dreaded.site/api/facebook?url=${encodeURIComponent(url)}`;
+        // جلب بيانات الفيديو من API الجديد
+        const apiUrl = `https://delirius-apiofc.vercel.app/download/facebook?url=${encodeURIComponent(url)}`;
         const { data } = await axios.get(apiUrl);
 
-        if (!data?.facebook?.hdVideo && !data?.facebook?.sdVideo) {
+        if (!data?.urls?.length) {
             throw '❌ تعذر العثور على الفيديو، يرجى التأكد من الرابط';
         }
 
-        const videoUrl = data.facebook.hdVideo || data.facebook.sdVideo;
-        const videoTitle = data.facebook.title || "فيديو فيسبوك";
+        const videoUrl = data.urls[0].hd || data.urls[0].sd;
+        const videoTitle = data.title || "فيديو فيسبوك";
 
         // إنشاء مجلد مؤقت
         const tmpDir = path.join(process.cwd(), 'tmp');
@@ -64,11 +64,13 @@ let handler = async (m, { conn, args }) => {
 
         // حذف الملف المؤقت
         fs.unlinkSync(tempFile);
-        
-        await m.react('✅');
+
+        // إرسال رد فعل نجاح
+        await conn.sendReact(m.chat, m.key, '✅');
 
     } catch (error) {
-        await m.react('❌');
+        // إرسال رد فعل فشل
+        await conn.sendReact(m.chat, m.key, '❌');
         throw `❌ حدث خطأ: ${error.message || error}`;
     }
 };
