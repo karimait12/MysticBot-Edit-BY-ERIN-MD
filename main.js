@@ -537,7 +537,7 @@ setInterval(async () => {
   if (stopped === 'close' || !conn || !conn?.user) return;
   const _uptime = process.uptime() * 1000;
   const uptime = clockString(_uptime);
-  const bio = `مرحبا انا بوت ❲ ${global.wm} ❳\nاعمل بتقنيات الذكاء الاصطناعي\nاعمل منذ ❲ ${uptime} ❳\nلاستخدامي اكتب ❲ .اوامر ❳ 🧞`;
+  const bio = 'anime 7';
   await conn?.updateProfileStatus(bio).catch((_) => _);
 }, 60000);
 function clockString(ms) {
