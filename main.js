@@ -25,6 +25,11 @@ import NodeCache from 'node-cache';
 const {chain} = lodash;
 const PORT = process.env.PORT || process.env.SERVER_PORT || 3000;
 let stopped = 'close';  
+let retryCount = 0;
+const MAX_RETRIES = 10;
+let keepAliveInterval;
+let isReconnecting = false;
+
 protoType();
 serialize();
 const msgRetryCounterMap = new Map();
@@ -46,7 +51,6 @@ const __dirname = global.__dirname(import.meta.url);
 global.opts = new Object(yargs(process.argv.slice(2)).exitProcess(false).parse());
 global.prefix = new RegExp('^[' + (opts['prefix'] || '*/i!#$%+£¢€¥^°=¶∆×÷π√✓©®:;?&.\\-.@').replace(/[|\\{}()[\]^$+*?.\-\^]/g, '\\$&') + ']');
 global.db = new Low(/https?:\/\//.test(opts['db'] || '') ? new cloudDBAdapter(opts['db']) : new JSONFile(`${opts._[0] ? opts._[0] + '_' : ''}database.json`));
-
 
 global.loadDatabase = async function loadDatabase() {
   if (global.db.READ) {
@@ -74,8 +78,6 @@ global.loadDatabase = async function loadDatabase() {
 };
 loadDatabase();
 
-/* Creditos a Otosaka (https://wa.me/51993966345) */
-
 global.chatgpt = new Low(new JSONFile(path.join(__dirname, '/db/chatgpt.json')));
 global.loadChatgptDB = async function loadChatgptDB() {
   if (global.chatgpt.READ) {
@@ -99,9 +101,6 @@ global.loadChatgptDB = async function loadChatgptDB() {
 };
 loadChatgptDB();
 
-/* ------------------------------------------------*/
-
-
 const {state, saveCreds} = await useMultiFileAuthState(global.authFile);
 
 const {version} = await fetchLatestBaileysVersion();
@@ -113,20 +112,20 @@ const MethodMobile = process.argv.includes("mobile")
 const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 const question = (texto) => new Promise((resolver) => rl.question(texto, resolver))
 
-//Código adaptado para la compatibilidad de ser bot con el código de 8 digitos. Hecho por: https://github.com/GataNina-Li
 let opcion
 if (methodCodeQR) {
-opcion = '1'
+  opcion = '1'
 }
 if (!methodCodeQR && !methodCode && !fs.existsSync(`./${authFile}/creds.json`)) {
-do {
-  opcion = await question('[ ℹ️ ] اختر خيارًا:\n1. باستخدام رمز QR\n2. باستخدام رمز نصي مكون من 8 أرقام\n---> ')
-  if (!/^[1-2]$/.test(opcion)) {
-  console.log('[ ❗ ] الرجاء اختيار 1 أو 2 فقط.\n')
-  }} while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${authFile}/creds.json`))
-  }
+  do {
+    opcion = await question('[ ℹ️ ] اختر خيارًا:\n1. باستخدام رمز QR\n2. باستخدام رمز نصي مكون من 8 أرقام\n---> ')
+    if (!/^[1-2]$/.test(opcion)) {
+      console.log('[ ❗ ] الرجاء اختيار 1 أو 2 فقط.\n')
+    }
+  } while (opcion !== '1' && opcion !== '2' || fs.existsSync(`./${authFile}/creds.json`))
+}
 
-console.info = () => {} // https://github.com/skidy89/baileys actualmente no muestra logs molestos en la consola
+console.info = () => {}
 const connectionOptions = {
     logger: Pino({ level: 'silent' }),
     printQRInTerminal: opcion === '1' || methodCodeQR,
@@ -136,68 +135,54 @@ const connectionOptions = {
         creds: state.creds,
         keys: makeCacheableSignalKeyStore(state.keys, Pino({ level: 'fatal' }).child({ level: 'fatal' })),
     },
-    waWebSocketUrl: 'wss://web.whatsapp.com/ws/chat?ED=CAIICA',
+    waWebSocketUrl: 'wss://web.whatsapp.com/ws/chat',
     markOnlineOnConnect: true,
+    connectTimeoutMs: 40000,
+    keepAliveIntervalMs: 25000,
     generateHighQualityLinkPreview: true,
     getMessage: async (key) => {
         let jid = jidNormalizedUser(key.remoteJid);
         let msg = await store.loadMessage(jid, key.id);
         return msg?.message || "";
     },
-    patchMessageBeforeSending: async (message) => {
-        let messages = 0;
-        global.conn.uploadPreKeysToServerIfRequired();
-        messages++;
-        return message;
-    },
-    msgRetryCounterCache: msgRetryCounterCache,
-    userDevicesCache: userDevicesCache,
-    //msgRetryCounterMap,
-    defaultQueryTimeoutMs: undefined,
-    cachedGroupMetadata: (jid) => global.conn.chats[jid] ?? {},
+    shouldIgnoreJid: (jid) => isJidBroadcast(jid),
+    fireInitQueries: true,
     version: [2, 3000, 1015901307],
-    //userDeviceCache: msgRetryCounterCache <=== quien fue el pendejo?????
 };
 
 global.conn = makeWASocket(connectionOptions);
 
 if (!fs.existsSync(`./${authFile}/creds.json`)) {
-if (opcion === '2' || methodCode) {
-opcion = '2'
-if (!conn.authState.creds.registered) {  
-if (MethodMobile) throw new Error('لا يمكن استخدام رمز الاقتران مع واجهة برمجة التطبيقات المحمولة.')
+  if (opcion === '2' || methodCode) {
+    opcion = '2'
+    if (!conn.authState.creds.registered) {  
+      if (MethodMobile) throw new Error('لا يمكن استخدام رمز الاقتران مع واجهة برمجة التطبيقات المحمولة.')
 
-let numeroTelefono
-if (!!phoneNumber) {
-numeroTelefono = phoneNumber.replace(/[^0-9]/g, '')
-if (!Object.keys(PHONENUMBER_MCC).some(v => numeroTelefono.startsWith(v))) {
+      let numeroTelefono
+      if (!!phoneNumber) {
+        numeroTelefono = phoneNumber.replace(/[^0-9]/g, '')
+        if (!Object.keys(PHONENUMBER_MCC).some(v => numeroTelefono.startsWith(v))) {
+          console.log(chalk.bgBlack(chalk.bold.redBright("ابدأ برمز الدولة لرقم WhatsApp الخاص بك.\nمثال: +201151094460\n")));
+          process.exit(0)
+        }
+      } else {
+        while (true) {
+          numeroTelefono = await question(chalk.bgBlack(chalk.bold.yellowBright('يرجى كتابة رقم WhatsApp الخاص بك.\nمثال: +201151094460\n')));
+          numeroTelefono = numeroTelefono.replace(/[^0-9]/g, '')
+          if (numeroTelefono.match(/^\d+$/) && Object.keys(PHONENUMBER_MCC).some(v => numeroTelefono.startsWith(v))) break 
+          else console.log(chalk.bgBlack(chalk.bold.redBright("يرجى كتابة رقم WhatsApp الخاص بك.\nمثال: +201151094460.\n")));
+        }
+        rl.close()  
+      } 
 
-console.log(chalk.bgBlack(chalk.bold.redBright("ابدأ برمز الدولة لرقم WhatsApp الخاص بك.\nمثال: +201151094460\n")));
-
-process.exit(0)
-}} else {
-while (true) {
-numeroTelefono = await question(chalk.bgBlack(chalk.bold.yellowBright('يرجى كتابة رقم WhatsApp الخاص بك.\nمثال: +201151094460\n')));
-
-numeroTelefono = numeroTelefono.replace(/[^0-9]/g, '')
-
-if (numeroTelefono.match(/^\d+$/) && Object.keys(PHONENUMBER_MCC).some(v => numeroTelefono.startsWith(v))) {
-break 
-} else {
-console.log(chalk.bgBlack(chalk.bold.redBright("يرجى كتابة رقم WhatsApp الخاص بك.\nمثال: +201151094460.\n")));
-
-}}
-rl.close()  
-} 
-
-        setTimeout(async () => {
-            let codigo = await conn.requestPairingCode(numeroTelefono)
-            codigo = codigo?.match(/.{1,4}/g)?.join("-") || codigo
-            console.log(chalk.yellow('[ ℹ️ ] أدخل رمز الاقتران في WhatsApp.'))
-console.log(chalk.black(chalk.bgGreen(`رمز الاقتران الخاص بك: `)), chalk.black(chalk.white(codigo)))
-
-        }, 3000)
-}}
+      setTimeout(async () => {
+        let codigo = await conn.requestPairingCode(numeroTelefono)
+        codigo = codigo?.match(/.{1,4}/g)?.join("-") || codigo
+        console.log(chalk.yellow('[ ℹ️ ] أدخل رمز الاقتران في WhatsApp.'))
+        console.log(chalk.black(chalk.bgGreen(`رمز الاقتران الخاص بك: `)), chalk.black(chalk.white(codigo)))
+      }, 3000)
+    }
+  }
 }
 
 conn.isInit = false;
@@ -215,48 +200,25 @@ if (!opts['test']) {
 
 if (opts['server']) (await import('./server.js')).default(global.conn, PORT);
 
-
-/* Y ese fue el momazo mas bueno del mundo
-        Aunque no dudara tan solo un segundo
-        Mas no me arrepiento de haberme reido
-        Por que la grasa es un sentimiento
-        Y ese fue el momazo mas bueno del mundo
-        Aunque no dudara tan solo un segundo
-        que me arrepiento de ser un grasoso
-        Por que la grasa es un sentimiento
-        - El waza 👻👻👻👻 (Aiden)            
-
-   Yo tambien se hacer momazos Aiden...
-        ahi te va el ajuste de los borrados
-        inteligentes de las sesiones y de los sub-bot
-        By (Rey Endymion 👺👍🏼) 
-
-   Ninguno es mejor que tilin god
-        - atte: sk1d             */
-
 function clearTmp() {
   const tmp = [join(__dirname, './src/tmp')];
   const filename = [];
   tmp.forEach((dirname) => readdirSync(dirname).forEach((file) => filename.push(join(dirname, file))));
   return filename.map((file) => {
     const stats = statSync(file);
-    if (stats.isFile() && (Date.now() - stats.mtimeMs >= 1000 * 60 * 3)) return unlinkSync(file); // 3 minutes
+    if (stats.isFile() && (Date.now() - stats.mtimeMs >= 1000 * 60 * 3)) return unlinkSync(file);
     return false;
   });
 }
 
-// Función para eliminar archivos core.<numero>
 const dirToWatchccc = path.join(__dirname, './');
 function deleteCoreFiles(filePath) {
   const coreFilePattern = /^core\.\d+$/i;
   const filename = path.basename(filePath);
   if (coreFilePattern.test(filename)) {
     fs.unlink(filePath, (err) => {
-      if (err) {
-        console.error(`خطأ في حذف الملف ${filePath}:`, err);
-      } else {
-        console.log(`تم حذف الملف: ${filePath}`);
-      }
+      if (err) console.error(`خطأ في حذف الملف ${filePath}:`, err);
+      else console.log(`تم حذف الملف: ${filePath}`);
     });
   }
 }
@@ -264,133 +226,119 @@ fs.watch(dirToWatchccc, (eventType, filename) => {
   if (eventType === 'rename') {
     const filePath = path.join(dirToWatchccc, filename);
     fs.stat(filePath, (err, stats) => {
-      if (!err && stats.isFile()) {
-        deleteCoreFiles(filePath);
-      }
+      if (!err && stats.isFile()) deleteCoreFiles(filePath);
     });
   }
 });
 
-function purgeSession() {
-let prekey = []
-let directorio = readdirSync("./MysticSession")
-let filesFolderPreKeys = directorio.filter(file => {
-return file.startsWith('pre-key-') /*|| file.startsWith('session-') || file.startsWith('sender-') || file.startsWith('app-') */
-})
-prekey = [...prekey, ...filesFolderPreKeys]
-filesFolderPreKeys.forEach(files => {
-unlinkSync(`./NanoSession/${files}`)
-})
-} 
-
-function purgeSessionSB() {
-try {
-let listaDirectorios = readdirSync('./jadibts/');
-let SBprekey = []
-listaDirectorios.forEach(directorio => {
-if (statSync(`./jadibts/${directorio}`).isDirectory()) {
-let DSBPreKeys = readdirSync(`./jadibts/${directorio}`).filter(fileInDir => {
-return fileInDir.startsWith('pre-key-') /*|| fileInDir.startsWith('app-') || fileInDir.startsWith('session-')*/
-})
-SBprekey = [...SBprekey, ...DSBPreKeys]
-DSBPreKeys.forEach(fileInDir => {
-unlinkSync(`./jadibts/${directorio}/${fileInDir}`)
-})
-}
-})
-if (SBprekey.length === 0) return; //console.log(chalk.cyanBright(`=> No hay archivos por eliminar.`))
-} catch (err) {
-console.log(chalk.bold.red(`[ ℹ️ ] حدث خطأ أثناء الحذف، الملفات لم تُحذف`))
-}}
-
-function purgeOldFiles() {
-const directories = ['./MysticSession/', './jadibts/']
-const oneHourAgo = Date.now() - (60 * 60 * 1000)
-directories.forEach(dir => {
-readdirSync(dir, (err, files) => {
-if (err) throw err
-files.forEach(file => {
-const filePath = path.join(dir, file)
-stat(filePath, (err, stats) => {
-if (err) throw err;
-if (stats.isFile() && stats.mtimeMs < oneHourAgo && file !== 'creds.json') { 
-unlinkSync(filePath, err => {  
-if (err) throw err
-console.log(chalk.bold.green(`تم حذف الملف ${file} بنجاح`))
-})
-} else {  
-console.log(chalk.bold.red(`لم يتم حذف الملف ${file}` + err))
-} }) }) }) })
-}
-
 async function connectionUpdate(update) {
-
-
-  const {connection, lastDisconnect, isNewLogin} = update;
+  const {connection, lastDisconnect, isNewLogin, qr} = update;
   stopped = connection;
-  if (isNewLogin) conn.isInit = true;
+  
+  if (isNewLogin) {
+    conn.isInit = true;
+    retryCount = 0; // Reset retry counter on new login
+  }
+
   const code = lastDisconnect?.error?.output?.statusCode || lastDisconnect?.error?.output?.payload?.statusCode;
+  
   if (code && code !== DisconnectReason.loggedOut && conn?.ws.socket == null) {
     await global.reloadHandler(true).catch(console.error);
     global.timestamp.connect = new Date;
   }
+
   if (global.db.data == null) loadDatabase();
-if (update.qr != 0 && update.qr != undefined || methodCodeQR) {
-  if (opcion == '1' || methodCodeQR) {
-    console.log(chalk.yellow('[ ℹ️ ] قم بمسح رمز الاستجابة السريعة (QR).'));
-  }}
-  if (connection == 'open') {
-    console.log(chalk.yellow('[ ℹ️ ] تم الاتصال بنجاح.'));
+  
+  if (qr != 0 && qr != undefined || methodCodeQR) {
+    if (opcion == '1' || methodCodeQR) {
+      console.log(chalk.yellow('[ ℹ️ ] قم بمسح رمز الاستجابة السريعة (QR).'));
+    }
   }
+
+  if (connection == 'open') {
+    console.log(chalk.green('[ ✅ ] تم الاتصال بنجاح.'));
+    retryCount = 0; // Reset retry counter on successful connection
+    
+    // Start keep-alive interval
+    keepAliveInterval = setInterval(() => {
+      conn.sendPresenceUpdate('available').catch(() => {});
+    }, 60000);
+  }
+
   let reason = new Boom(lastDisconnect?.error)?.output?.statusCode;
   if (reason == 405) {
-  await fs.unlinkSync("./MysticSession/" + "creds.json")
-  console.log(chalk.bold.redBright(`[ ⚠ ] تم استبدال الاتصال، يرجى الانتظار لحظة سأقوم بإعادة التشغيل...\nإذا ظهرت أخطاء، يرجى البدء مرة أخرى باستخدام: npm start`))
-  process.send('reset')}
+    await fs.unlinkSync("./MysticSession/" + "creds.json")
+    console.log(chalk.bold.redBright(`[ ⚠ ] تم استبدال الاتصال، يرجى الانتظار لحظة سأقوم بإعادة التشغيل...\nإذا ظهرت أخطاء، يرجى البدء مرة أخرى باستخدام: npm start`))
+    process.send('reset')
+  }
+
   if (connection === 'close') {
-      if (reason === DisconnectReason.badSession) {
-          conn.logger.error(`[ ⚠ ] جلسة غير صحيحة، يرجى حذف المجلد ${global.authFile} وإعادة المسح مرة أخرى.`);
-          //process.exit();
-      } else if (reason === DisconnectReason.connectionClosed) {
-      conn.logger.warn(`[ ⚠ ] الاتصال مغلق، جاري إعادة الاتصال...`);
-      await global.reloadHandler(true).catch(console.error);
-  } else if (reason === DisconnectReason.connectionLost) {
-      conn.logger.warn(`[ ⚠ ] فقدان الاتصال بالخادم، جاري إعادة الاتصال...`);
-      await global.reloadHandler(true).catch(console.error);
-  } else if (reason === DisconnectReason.connectionReplaced) {
-      conn.logger.error(`[ ⚠ ] الاتصال تم استبداله، تم فتح جلسة جديدة. يرجى إغلاق الجلسة الحالية أولاً.`);
-      //process.exit();
-  } else if (reason === DisconnectReason.loggedOut) {
-      conn.logger.error(`[ ⚠ ] الاتصال مغلق، يرجى حذف المجلد ${global.authFile} وإعادة المسح مرة أخرى.`);
-      //process.exit();
-  } else if (reason === DisconnectReason.restartRequired) {
-      conn.logger.info(`[ ⚠ ] إعادة التشغيل مطلوبة، يرجى إعادة تشغيل الخادم إذا واجهت أي مشاكل.`);
-      await global.reloadHandler(true).catch(console.error);
-  } else if (reason === DisconnectReason.timedOut) {
-      conn.logger.warn(`[ ⚠ ] انقضى وقت الاتصال، جاري إعادة الاتصال...`);
-      await global.reloadHandler(true).catch(console.error);
-} else {
-      conn.logger.warn(`[ ⚠ ] سبب الانفصال غير معروف. ${reason || ''}: ${connection || ''}`);
-      await global.reloadHandler(true).catch(console.error);
-}
+    if (keepAliveInterval) clearInterval(keepAliveInterval);
     
-}
+    if (reason === DisconnectReason.badSession) {
+      conn.logger.error(`[ ⚠ ] جلسة غير صحيحة، يرجى حذف المجلد ${global.authFile} وإعادة المسح مرة أخرى.`);
+    } 
+    else if (reason === DisconnectReason.connectionClosed || 
+             reason === DisconnectReason.connectionLost || 
+             reason === DisconnectReason.restartRequired ||
+             reason === DisconnectReason.timedOut) {
+      
+      if (isReconnecting) return;
+      isReconnecting = true;
+      
+      if (retryCount < MAX_RETRIES) {
+        retryCount++;
+        const delay = Math.min(5000 * retryCount, 30000); // Exponential backoff with max 30s
+        
+        conn.logger.warn(`[ ⚠ ] محاولة إعادة الاتصال ${retryCount}/${MAX_RETRIES}...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        try {
+          await global.reloadHandler(true);
+          conn.logger.info(`[ ℹ️ ] إعادة الاتصال نجحت بعد ${retryCount} محاولات`);
+          retryCount = 0;
+        } catch (err) {
+          conn.logger.error(`[ ❌ ] فشل إعادة الاتصال: ${err.message}`);
+        } finally {
+          isReconnecting = false;
+        }
+      } else {
+        conn.logger.error(`[ ❌ ] وصلت إلى الحد الأقصى لمحاولات إعادة الاتصال (${MAX_RETRIES})`);
+        process.exit(1);
+      }
+    }
+    else if (reason === DisconnectReason.connectionReplaced) {
+      conn.logger.error(`[ ⚠ ] الاتصال تم استبداله، تم فتح جلسة جديدة.`);
+    } 
+    else if (reason === DisconnectReason.loggedOut) {
+      conn.logger.error(`[ ⚠ ] الاتصال مغلق، يرجى حذف المجلد ${global.authFile} وإعادة المسح مرة أخرى.`);
+    } 
+    else {
+      conn.logger.warn(`[ ⚠ ] سبب الانفصال غير معروف. ${reason || ''}`);
+    }
+  }
 }
 
-process.on('uncaughtException', console.error);
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+  setTimeout(() => process.exit(1), 5000);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
 
 let isInit = true;
-
 let handler = await import('./handler.js');
+
 global.reloadHandler = async function(restatConn) {
-
   try {
-
     const Handler = await import(`./handler.js?update=${Date.now()}`).catch(console.error);
     if (Object.keys(Handler || {}).length) handler = Handler;
   } catch (e) {
     console.error(e);
   }
+  
   if (restatConn) {
     const oldChats = global.conn.chats;
     try {
@@ -401,6 +349,7 @@ global.reloadHandler = async function(restatConn) {
     store?.bind(conn);
     isInit = true;
   }
+  
   if (!isInit) {
     conn.ev.off('messages.upsert', conn.handler);
     conn.ev.off('group-participants.update', conn.participantsUpdate);
@@ -411,11 +360,8 @@ global.reloadHandler = async function(restatConn) {
     conn.ev.off('creds.update', conn.credsUpdate);
   }
 
-  // Para cambiar estos mensajes, solo los archivos en la carpeta de language, 
-  // busque la clave "handler" dentro del json y cámbiela si es necesario
-   conn.welcome = '👋 مرحباً بك!\n@user';
+  conn.welcome = '👋 مرحباً بك!\n@user';
   conn.bye = '👋 إلى اللقاء!\n@user';
-
 
   conn.handler = handler.handler.bind(global.conn);
   conn.participantsUpdate = handler.participantsUpdate.bind(global.conn);
@@ -425,14 +371,6 @@ global.reloadHandler = async function(restatConn) {
   conn.connectionUpdate = connectionUpdate.bind(global.conn);
   conn.credsUpdate = saveCreds.bind(global.conn, true);
 
-  const currentDateTime = new Date();
-  const messageDateTime = new Date(conn.ev);
-  if (currentDateTime >= messageDateTime) {
-    const chats = Object.entries(conn.chats).filter(([jid, chat]) => !jid.endsWith('@g.us') && chat.isChats).map((v) => v[0]);
-  } else {
-    const chats = Object.entries(conn.chats).filter(([jid, chat]) => !jid.endsWith('@g.us') && chat.isChats).map((v) => v[0]);
-  }
-
   conn.ev.on('messages.upsert', conn.handler);
   conn.ev.on('group-participants.update', conn.participantsUpdate);
   conn.ev.on('groups.update', conn.groupsUpdate);
@@ -440,14 +378,15 @@ global.reloadHandler = async function(restatConn) {
   conn.ev.on('call', conn.onCall);
   conn.ev.on('connection.update', conn.connectionUpdate);
   conn.ev.on('creds.update', conn.credsUpdate);
+  
   isInit = false;
   return true;
 };
 
-
 const pluginFolder = global.__dirname(join(__dirname, './plugins/index'));
 const pluginFilter = (filename) => /\.js$/.test(filename);
 global.plugins = {};
+
 async function filesInit() {
   for (const filename of readdirSync(pluginFolder).filter(pluginFilter)) {
     try {
@@ -460,6 +399,7 @@ async function filesInit() {
     }
   }
 }
+
 filesInit().then((_) => Object.keys(global.plugins)).catch(console.error);
 
 global.reload = async (_ev, filename) => {
@@ -472,10 +412,12 @@ global.reload = async (_ev, filename) => {
         return delete global.plugins[filename];
       }
     } else conn.logger.info(`new plugin - '${filename}'`);
+    
     const err = syntaxerror(readFileSync(dir), filename, {
       sourceType: 'module',
       allowAwaitOutsideFunction: true,
     });
+    
     if (err) conn.logger.error(`syntax error while loading '${filename}'\n${format(err)}`);
     else {
       try {
@@ -489,9 +431,11 @@ global.reload = async (_ev, filename) => {
     }
   }
 };
+
 Object.freeze(global.reload);
 watch(pluginFolder, global.reload);
 await global.reloadHandler();
+
 async function _quickTest() {
   const test = await Promise.all([
     spawn('ffmpeg'),
@@ -512,21 +456,16 @@ async function _quickTest() {
         p.on('error', (_) => resolve(false));
       })]);
   }));
+  
   const [ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find] = test;
   global.support = {ffmpeg, ffprobe, ffmpegWebp, convert, magick, gm, find};
   Object.freeze(global.support);
 }
+
 setInterval(async () => {
   if (stopped === 'close' || !conn || !conn?.user) return;
   await clearTmp();
 }, 180000);
-/*
-setInterval(async () => {
-  if (stopped === 'close' || !conn || !conn?.user) return; //intervals at the same thime tho
-  await purgeSessionSB();
-  await purgeOldFiles();
-  await purgeSession();
-}, 1000 * 60 * 60);*/
 
 setInterval(async () => {
   if (stopped === 'close' || !conn || !conn?.user) return;
@@ -535,6 +474,7 @@ setInterval(async () => {
   const bio = 'anime 7';
   await conn?.updateProfileStatus(bio).catch((_) => _);
 }, 60000);
+
 function clockString(ms) {
   const d = isNaN(ms) ? '--' : Math.floor(ms / 86400000);
   const h = isNaN(ms) ? '--' : Math.floor(ms / 3600000) % 24;
@@ -542,4 +482,5 @@ function clockString(ms) {
   const s = isNaN(ms) ? '--' : Math.floor(ms / 1000) % 60;
   return [d, 'd ️', h, 'h ', m, 'm ', s, 's '].map((v) => v.toString().padStart(2, 0)).join('');
 }
+
 _quickTest().catch(console.error);
