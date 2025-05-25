@@ -7,7 +7,7 @@ let handler = async (m) => {
   // إضافة تفاعل (React) قبل بدء التحميل
   await m.react('⏳').catch(e => console.error('Failed to react:', e));
   
-  const fileUrl = "https://apkhihe.org/?download_link=WnJVdTJKSTZrSkt3OUp0Qjc1aTFNand3VEszbVFUM2VjR3k3Z2RZV3RUaGk0aGFXSHRyWm1nTTh5ZVRGV1BwcVZSUmFxNmdqcjF0ZmoxOWFTaGNIaFJhaE9SWUp5V0Q2WVBMZW5LTWhJbzRqQm11dWZDdW1rRkt4KyttKzQ0di9ZNGhGSnpFZk0rNWNXWTlTOVFWZlhNdjVmVWp1QnpiZTUvY01wUFhxdnpnczNvMkJLQlBaVjk3Y2Zkb0Y0bmpMYVRzS3RXK0w3ZG9XTVA1WVNQenBxdz09";
+  const fileUrl = "https://files.modhello.download/2025/CapCut-v13.6.0-mod-ModHello.Com.apk";
 
   try {
     // إنشاء مجلد التحميلات إذا لم يكن موجوداً
